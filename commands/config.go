@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/thash/asana/api"
-	"github.com/thash/asana/config"
-	"github.com/thash/asana/utils"
+	"github.com/ghost-vk/asana/api"
+	"github.com/ghost-vk/asana/config"
+	"github.com/ghost-vk/asana/utils"
 )
 
 func Config(c *cli.Context) {

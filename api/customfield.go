@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/thash/asana/utils"
+	"github.com/ghost-vk/asana/utils"
 )
 
 type CustomFieldDef struct {

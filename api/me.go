@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/thash/asana/utils"
+	"github.com/ghost-vk/asana/utils"
 )
 
 type Me_t struct {

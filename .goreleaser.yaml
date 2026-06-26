@@ -1,0 +1,18 @@
+version: 2
+
+builds:
+  - env: [CGO_ENABLED=0]
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+brews:
+  - repository:
+      owner: ghost-vk
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/ghost-vk/asana"
+    description: "Command-line client for Asana"
+    test: |
+      assert_match version.to_s, shell_output("#{bin}/asana --version")

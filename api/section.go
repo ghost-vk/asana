@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/thash/asana/utils"
+	"github.com/ghost-vk/asana/utils"
 )
 
 func Sections(project string) []Base {

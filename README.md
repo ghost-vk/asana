@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/thash/asana.svg?branch=master)](https://travis-ci.org/thash/asana)
+[![release](https://github.com/ghost-vk/asana/actions/workflows/release.yml/badge.svg)](https://github.com/ghost-vk/asana/actions/workflows/release.yml)
 
 OverView
 =========================================
@@ -13,13 +13,12 @@ Requirements: go
 
 ### Mac OS X
 
-    $ brew tap thash/asana
-    $ brew install asana
+    $ brew install ghost-vk/tap/asana
 
 
 ### Others
 
-    $ go get github.com/thash/asana
+    $ go get github.com/ghost-vk/asana
 
 
 Usage
@@ -28,7 +27,7 @@ Usage
     $ asana help
 
     NAME:
-       asana - asana cui client ( https://github.com/thash/asana )
+       asana - asana cui client ( https://github.com/ghost-vk/asana )
 
     USAGE:
        asana [global options] command [command options] [arguments...]
@@ -305,4 +304,4 @@ Pass `-g <story_gid>` to read a single comment by its gid.
 TODO
 =========================================
 
-See [Issues](https://github.com/thash/asana/issues)
+See [Issues](https://github.com/ghost-vk/asana/issues)

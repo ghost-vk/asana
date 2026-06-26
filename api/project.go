@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/thash/asana/config"
-	"github.com/thash/asana/utils"
+	"github.com/ghost-vk/asana/config"
+	"github.com/ghost-vk/asana/utils"
 )
 
 func Projects(params url.Values) []Base {
