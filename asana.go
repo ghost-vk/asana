@@ -116,6 +116,18 @@ func defs() []*cli.Command {
 			},
 		},
 		{
+			Name:    "comments",
+			Aliases: []string{"cms"},
+			Usage:   "list comments of a task (comments <index>) or read one (comments -g <story_gid>)",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "gid", Aliases: []string{"g"}, Usage: "story gid to fetch a single comment"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Comments(c)
+				return nil
+			},
+		},
+		{
 			Name:  "done",
 			Usage: "Complete task",
 			Action: func(c *cli.Context) error {

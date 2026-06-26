@@ -45,6 +45,7 @@ Usage
        create, cr           create a task
        task, t              get a task
        comment, cm          Post comment
+       comments, cms        list or read comments of a task
        done                 Complete task
        due                  set due date
        body                 set task body (notes)
@@ -248,6 +249,17 @@ This command opens editor. Write comment, save and close.
 ![](https://raw.githubusercontent.com/thash/asana/images/cmt.png)
 
 You can change editor by updating `$EDITOR` environment variable.
+
+`asana comments <index>` (alias `cms`) lists all comments on a task.
+
+    $ asana cms 0
+
+    0 1234567890123456  by Alice (2024-01-01T10:00:00.000Z)
+    Great progress!
+
+Pass `-g <story_gid>` to read a single comment by its gid.
+
+    $ asana cms -g 1234567890123456
 
 
 ### Open a task in the browser
