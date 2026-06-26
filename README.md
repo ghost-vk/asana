@@ -40,11 +40,19 @@ Usage
        config, c            Asana configuration. Your settings will be saved in ~/.asana.yml
        workspaces, w        get workspaces
        tasks, ts            get tasks
+       projects, ps         get projects
+       sections, sec        get sections/columns of a project
+       create, cr           create a task
        task, t              get a task
        comment, cm          Post comment
        done                 Complete task
        due                  set due date
+       body                 set task body (notes)
+       fields, cf           list custom fields of a project
+       set-field, sf        set a custom field value on a task
+       delete, rm           delete a task by gid
        browse, b            open a task in the web browser
+       download, dl         download attachment from a task
        help, h              Shows a list of commands or help for one command
 
     GLOBAL OPTIONS:
@@ -121,6 +129,91 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
     --------
     changed the due date to August 13 (2014-08-11T10:30:39.785Z)
 
+`-p <project_gid>` lists tasks of a project instead of your own. Output shows the task gid, non-default type, section and due date (when set).
+
+    $ asana ts -p 1202689990538470
+
+    0 1214634990237303 Raw Signals 📋        Доработки по порталу
+    1 1211297085634051 [S] Engineering Sprint Обновление баннера
+    2 1207951833057398 milestone [R] Released Релиз v2
+
+
+### Projects
+
+`asana projects` or `asana ps` list projects of your workspace (gid + name).
+
+    $ asana ps
+
+    0 1202689990538470 ID-1916 [ДИТ] Редизайн ММЦ
+    1 1202773036545383 Design System
+
+Pass a query to search by name (server-side, whole workspace):
+
+    $ asana ps ID-1916
+
+
+### Sections
+
+`asana sections -p <project_gid>` (alias `sec`) list the sections/columns of a project (gid + name). Results are cached per project for 5m; use `-n` to skip the cache or `-r` to refresh it.
+
+    $ asana sec -p 1202689990538470
+
+    0 1202689990657994 Landed Signals
+    1 1202689990660101 Inbox 📬
+
+Use the printed section gid as `-s` when creating a task.
+
+
+### Create a task
+
+`asana create` or `asana cr` create a task. Flags must come **before** the name.
+
+    $ asana create "buy coffee"                                  # in your workspace
+    $ asana create -p <project_gid> "task in a project"
+    $ asana create -p <project_gid> -s <section_gid> "task in a column"
+    $ asana create -p <project_gid> -b "task description here" "task name"
+
+`-p` adds the task to a project, `-s` puts it into a section/column, `-b` sets the body (notes).
+
+
+### Task body (notes)
+
+`asana body <index> <text>` sets the body (the `notes` field) of a task picked by its index in the tasks list. Quote multi-word text.
+
+    $ asana body 0 "Updated description, multiple words."
+
+Newlines and quotes inside the text are preserved. Pass an empty string to clear the body.
+
+
+### Custom fields
+
+`asana fields -p <project_gid>` (alias `cf`) list the custom fields attached to a project, with their type and — for `enum` fields — the available options (gid + name).
+
+    $ asana cf -p 1202689990538470
+
+    1199105780031549 Type (enum)
+      1198862357412458 Feature
+      1199105780031551 Bug
+    1199542488281141 Priority (enum)
+      ...
+
+`asana set-field` (alias `sf`) set a custom field value on a task:
+
+    $ asana sf -t <task_gid> -f <field_gid> -V <value>
+
+`-V` accepts:
+
+- `enum` — the option **name** (case-insensitive, e.g. `Feature`) or its gid. An unknown name fails with the list of valid options.
+- `text` — any string.
+- `number` — the number.
+- `null` — clears the field.
+
+      $ asana sf -t 1214222140735157 -f 1199105780031549 -V Feature   # enum by name
+      $ asana sf -t 1214222140735157 -f 1167156493787491 -V 8         # number
+      $ asana sf -t 1214222140735157 -f 1199105780031549 -V null      # clear
+
+Field and option gids come from `asana fields -p <project>`.
+
 
 ### Complete, set due on a task
 
@@ -135,6 +228,13 @@ To change(or newly set) due date, use `asana due <index> <due_date>`.
 Or, `today` or `tomorrow`.
 
     $ asana due 5 today
+
+
+### Set task body
+
+`asana body <index> <text>` sets the body (notes) of an existing task.
+
+    $ asana body 2 "Updated description with details"
 
 
 ### Comment
@@ -156,6 +256,36 @@ You can change editor by updating `$EDITOR` environment variable.
 
     $ asana browse 1
     // => open browser
+
+
+### Custom fields
+
+`asana fields -p <project_gid>` (alias `cf`) lists all custom fields for a project with their types and, for enum fields, available options.
+
+    $ asana cf -p 1202689990538470
+
+    1198862357412455 Type (enum)
+      1198862357412458 Feature
+      1199105780031551 Bug
+    1199542488281138 Priority (enum)
+      1199542488281141 High
+      1199542488281142 Medium
+
+`asana set-field` (alias `sf`) sets a custom field value on a task by GID.
+
+    $ asana sf -t <task_gid> -f <field_gid> -V <value>
+
+    # enum: pass the option gid
+    $ asana sf -t 1216060636060282 -f 1198862357412455 -V 1198862357412458
+
+    # text
+    $ asana sf -t 1216060636060282 -f 1198862900000001 -V "in review"
+
+    # number
+    $ asana sf -t 1216060636060282 -f 1198862900000002 -V 42
+
+    # clear (any type)
+    $ asana sf -t 1216060636060282 -f 1198862357412455 -V null
 
 
 TODO

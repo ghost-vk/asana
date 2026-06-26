@@ -43,11 +43,53 @@ func defs() []*cli.Command {
 			Aliases: []string{"ts"},
 			Usage:   "get tasks",
 			Flags: []cli.Flag{
-				&cli.BoolFlag{Name: "no-cache, n", Usage: "without cache"},
-				&cli.BoolFlag{Name: "refresh, r", Usage: "update cache"},
+				&cli.BoolFlag{Name: "no-cache", Aliases: []string{"n"}, Usage: "without cache"},
+				&cli.BoolFlag{Name: "refresh", Aliases: []string{"r"}, Usage: "update cache"},
+				&cli.IntFlag{Name: "limit", Aliases: []string{"l"}, Value: 100, Usage: "max tasks to fetch"},
+				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "tasks of a project (gid)"},
 			},
 			Action: func(c *cli.Context) error {
 				commands.Tasks(c)
+				return nil
+			},
+		},
+		{
+			Name:    "projects",
+			Aliases: []string{"ps"},
+			Usage:   "get projects",
+			Flags: []cli.Flag{
+				&cli.IntFlag{Name: "limit", Aliases: []string{"l"}, Value: 100, Usage: "max projects to fetch"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Projects(c)
+				return nil
+			},
+		},
+		{
+			Name:    "sections",
+			Aliases: []string{"sec"},
+			Usage:   "get sections/columns of a project: sections -p <project>",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "project gid"},
+				&cli.BoolFlag{Name: "no-cache", Aliases: []string{"n"}, Usage: "without cache"},
+				&cli.BoolFlag{Name: "refresh", Aliases: []string{"r"}, Usage: "update cache"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Sections(c)
+				return nil
+			},
+		},
+		{
+			Name:    "create",
+			Aliases: []string{"cr"},
+			Usage:   "create a task: create [-p project] [-s section] [-b body] <name> (flags before name)",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "project gid"},
+				&cli.StringFlag{Name: "section", Aliases: []string{"s"}, Usage: "section/column gid"},
+				&cli.StringFlag{Name: "body", Aliases: []string{"b"}, Usage: "task body (notes)"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.CreateTask(c)
 				return nil
 			},
 		},
@@ -90,11 +132,54 @@ func defs() []*cli.Command {
 			},
 		},
 		{
+			Name:  "body",
+			Usage: "set task body (notes): body <index> <text>",
+			Action: func(c *cli.Context) error {
+				commands.Body(c)
+				return nil
+			},
+		},
+		{
 			Name:    "browse",
 			Aliases: []string{"b"},
 			Usage:   "open a task in the web browser",
 			Action: func(c *cli.Context) error {
 				commands.Browse(c)
+				return nil
+			},
+		},
+		{
+			Name:    "fields",
+			Aliases: []string{"cf"},
+			Usage:   "list custom fields of a project",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "project gid"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Fields(c)
+				return nil
+			},
+		},
+		{
+			Name:    "set-field",
+			Aliases: []string{"sf"},
+			Usage:   "set a custom field on a task: -t <task> -f <field> -V <value|option_name|option_gid|null>",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "task", Aliases: []string{"t"}, Usage: "task gid"},
+				&cli.StringFlag{Name: "field", Aliases: []string{"f"}, Usage: "custom field gid"},
+				&cli.StringFlag{Name: "value", Aliases: []string{"V"}, Usage: "enum: option name or gid; text: string; number: value; null to clear"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.SetField(c)
+				return nil
+			},
+		},
+		{
+			Name:    "delete",
+			Aliases: []string{"rm"},
+			Usage:   "delete a task by gid",
+			Action: func(c *cli.Context) error {
+				commands.DeleteTask(c)
 				return nil
 			},
 		},

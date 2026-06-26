@@ -49,11 +49,18 @@ func Put(path string, data string) []byte {
 	return fire(req)
 }
 
+func Delete(path string) []byte {
+	req, err := http.NewRequest("DELETE", PostBase+path, nil)
+	utils.Check(err)
+	return fire(req)
+}
+
 func fire(req *http.Request) []byte {
 	client := &http.Client{}
 
 	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("Authorization", "Bearer " + config.Load().Personal_access_token)
+	req.Header.Set("Content-Type", "application/json") // ponytail: harmless on GET, required for POST/PUT JSON bodies
 
 	resp, err := client.Do(req)
 	body, err := ioutil.ReadAll(resp.Body)

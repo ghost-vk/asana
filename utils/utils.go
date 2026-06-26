@@ -50,6 +50,10 @@ func CacheFile() string {
 	return Home() + "/" + CacheFileName
 }
 
+func CacheFileFor(key string) string {
+	return Home() + "/.asana." + key + ".cache"
+}
+
 // base: github.com/github/hub
 func BrowserLauncher() (string, error) {
 	browser := os.Getenv("BROWSER")

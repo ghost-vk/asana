@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
-	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/thash/asana/config"
 	"github.com/thash/asana/utils"
@@ -31,8 +31,15 @@ type Attachment_t struct {
 	Host         string `json:"host"`
 }
 
+type Membership_t struct {
+	Project Base `json:"project"`
+	Section Base `json:"section"`
+}
+
 type Task_t struct {
 	Gid             string          `json:"gid"`
+	ResourceSubtype string          `json:"resource_subtype"`
+	Memberships     []Membership_t  `json:"memberships"`
 	Created_at      string          `json:"created_at"`
 	Modified_at     string          `json:"modified_at"`
 	Name            string          `json:"name"`
@@ -58,6 +65,13 @@ type Story_t struct {
 	Created_by Base
 }
 
+func (t Task_t) Section() string {
+	if len(t.Memberships) > 0 {
+		return t.Memberships[0].Section.Name // ponytail: first membership; match by project gid if a task spans projects
+	}
+	return ""
+}
+
 type ByDue []Task_t
 
 func (a ByDue) Len() int           { return len(a) }
@@ -65,14 +79,24 @@ func (a ByDue) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByDue) Less(i, j int) bool { return a[i].Due_on < a[j].Due_on }
 
 func Tasks(params url.Values, withCompleted bool) []Task_t {
-	params.Add("workspace", strconv.Itoa(config.Load().Workspace))
-	params.Add("assignee", "me")
-	params.Add("opt_fields", "name,completed,due_on")
-	var tasks map[string][]Task_t
+	if params.Get("project") == "" {
+		params.Add("workspace", strconv.Itoa(config.Load().Workspace))
+		params.Add("assignee", "me")
+	}
+	params.Add("opt_fields", "name,completed,due_on,resource_subtype,memberships.section.name")
+	if !withCompleted {
+		params.Set("completed_since", "now") // фильтруем на стороне Asana, иначе limit съедают старые завершённые
+	}
+	if params.Get("limit") == "" {
+		params.Set("limit", "100") // ponytail: Asana rejects unpaginated /tasks as "too large"
+	}
+	var tasks struct {
+		Data []Task_t `json:"data"`
+	}
 	err := json.Unmarshal(Get("/api/1.0/tasks", params), &tasks)
 	utils.Check(err)
 	var tasks_without_due, tasks_with_due []Task_t
-	for _, t := range tasks["data"] {
+	for _, t := range tasks.Data {
 		if !withCompleted && t.Completed {
 			continue
 		}
@@ -145,12 +169,15 @@ func FindTaskId(index string, autoFirst bool) string {
 		task := Tasks(url.Values{}, false)[ind]
 		id = task.Gid
 	} else {
-		lines := regexp.MustCompile("\n").Split(string(txt), -1)
-		for i, line := range lines {
-			if index == strconv.Itoa(i) {
-				line = regexp.MustCompile("^[0-9]*:").ReplaceAllString(line, "") // remove index
-				id = regexp.MustCompile("^[^:]*").FindString(line)
+		i := 0
+		for _, line := range strings.Split(strings.TrimRight(string(txt), "\n"), "\n") {
+			if line == "" {
+				continue
 			}
+			if index == strconv.Itoa(i) {
+				id = strings.SplitN(line, "\t", 2)[0] // gid is field 0
+			}
+			i++
 		}
 	}
 	return id
@@ -179,8 +206,35 @@ func CommentTo(taskId string, comment string) string {
 	return output["data"].Text
 }
 
+func CreateTask(name, project, section, notes string) Task_t {
+	data := `{"data":{"name":` + strconv.Quote(name)
+	if notes != "" {
+		data += `,"notes":` + strconv.Quote(notes)
+	}
+	if project != "" {
+		data += `,"projects":["` + project + `"]`
+	} else {
+		data += `,"workspace":"` + strconv.Itoa(config.Load().Workspace) + `"`
+	}
+	data += `}}`
+
+	var output map[string]Task_t
+	err := json.Unmarshal(Post("/tasks", data), &output)
+	utils.Check(err)
+	t := output["data"]
+
+	if section != "" {
+		Post("/sections/"+section+"/addTask", `{"data":{"task":"`+t.Gid+`"}}`)
+	}
+	return t
+}
+
+func DeleteTask(taskId string) {
+	Delete("/tasks/" + taskId)
+}
+
 func Update(taskId string, key string, value string) Task_t {
-	respBody := Put("/tasks/"+taskId, `{"data":{"`+key+`":"`+value+`"}}`)
+	respBody := Put("/tasks/"+taskId, `{"data":{"`+key+`":`+strconv.Quote(value)+`}}`)
 
 	var output map[string]Task_t
 	err := json.Unmarshal(respBody, &output)
