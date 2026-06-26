@@ -11,7 +11,8 @@ builds:
       - -s -w -X main.version={{.Version}}
 
 brews:
-  - repository:
+  - directory: Formula
+    repository:
       owner: ghost-vk
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
