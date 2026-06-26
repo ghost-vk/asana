@@ -10,13 +10,20 @@ builds:
     ldflags:
       - -s -w -X main.version={{.Version}}
 
-brews:
-  - directory: Formula
+homebrew_casks:
+  - name: asana
+    binaries:
+      - asana
     repository:
       owner: ghost-vk
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://github.com/ghost-vk/asana"
     description: "Command-line client for Asana"
-    test: |
-      assert_match version.to_s, shell_output("#{bin}/asana --version")
+    # unsigned binary: strip the quarantine bit so it runs without Gatekeeper prompts
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/asana"]
+          end
