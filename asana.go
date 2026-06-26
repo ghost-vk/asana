@@ -49,6 +49,7 @@ func defs() []*cli.Command {
 				&cli.BoolFlag{Name: "refresh", Aliases: []string{"r"}, Usage: "update cache"},
 				&cli.IntFlag{Name: "limit", Aliases: []string{"l"}, Value: 100, Usage: "max tasks to fetch"},
 				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "tasks of a project (gid)"},
+				&cli.BoolFlag{Name: "json", Aliases: []string{"j"}, Usage: "output as JSON (detailed fields)"},
 			},
 			Action: func(c *cli.Context) error {
 				commands.Tasks(c)
@@ -64,6 +65,18 @@ func defs() []*cli.Command {
 			},
 			Action: func(c *cli.Context) error {
 				commands.Projects(c)
+				return nil
+			},
+		},
+		{
+			Name:    "project",
+			Aliases: []string{"p"},
+			Usage:   "get project details",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{Name: "json", Aliases: []string{"j"}, Usage: "output as JSON"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Project(c)
 				return nil
 			},
 		},

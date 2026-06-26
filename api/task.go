@@ -78,12 +78,16 @@ func (a ByDue) Len() int           { return len(a) }
 func (a ByDue) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByDue) Less(i, j int) bool { return a[i].Due_on < a[j].Due_on }
 
-func Tasks(params url.Values, withCompleted bool) []Task_t {
+func Tasks(params url.Values, withCompleted bool, detailed bool) []Task_t {
 	if params.Get("project") == "" {
 		params.Add("workspace", strconv.Itoa(config.Load().Workspace))
 		params.Add("assignee", "me")
 	}
-	params.Add("opt_fields", "name,completed,due_on,resource_subtype,memberships.section.name")
+	optFields := "name,completed,due_on,resource_subtype,memberships.section.name"
+	if detailed {
+		optFields += ",assignee.name,custom_fields.name,custom_fields.display_value"
+	}
+	params.Add("opt_fields", optFields)
 	if !withCompleted {
 		params.Set("completed_since", "now") // фильтруем на стороне Asana, иначе limit съедают старые завершённые
 	}
@@ -172,7 +176,7 @@ func FindTaskId(index string, autoFirst bool) string {
 	if err != nil { // cache file not exist
 		ind, parseErr := strconv.Atoi(index)
 		utils.Check(parseErr)
-		task := Tasks(url.Values{}, false)[ind]
+		task := Tasks(url.Values{}, false, false)[ind]
 		id = task.Gid
 	} else {
 		i := 0

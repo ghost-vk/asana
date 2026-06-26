@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -20,6 +21,17 @@ const (
 
 func Tasks(c *cli.Context) {
 	limit := c.Int("limit")
+	if c.Bool("json") {
+		params := url.Values{}
+		params.Add("limit", strconv.Itoa(limit))
+		if project := c.String("project"); project != "" {
+			params.Add("project", project)
+		}
+		tasks := api.Tasks(params, false, true)
+		b, _ := json.MarshalIndent(tasks, "", "  ")
+		fmt.Println(string(b))
+		return
+	}
 	if project := c.String("project"); project != "" {
 		fromAPI(true, limit, project)
 		return
@@ -57,7 +69,7 @@ func fromAPI(saveCache bool, limit int, project string) {
 	if project != "" {
 		params.Add("project", project)
 	}
-	tasks := api.Tasks(params, false)
+	tasks := api.Tasks(params, false, false)
 	if saveCache {
 		cache(tasks)
 	}

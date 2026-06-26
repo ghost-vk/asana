@@ -27,9 +27,10 @@ When an index is omitted, `task`, `due`, `comments` default to index `0` (top ta
 | ---------- | ------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | config     | c       | `asana config`                                                       | one-time token + workspace setup                                                                                  |
 | workspaces | w       | `asana w`                                                            | list workspaces                                                                                                   |
-| tasks      | ts      | `asana ts [-p <project>] [-l N] [-n] [-r]`                           | your tasks, or a project's with `-p`. Writes index cache. `-n` skip cache, `-r` refresh, `-l` limit (default 100) |
+| tasks      | ts      | `asana ts [-p <project>] [-l N] [-n] [-r] [-j]`                      | your tasks, or a project's with `-p`. Writes index cache. `-n` skip cache, `-r` refresh, `-l` limit (default 100). `-j` JSON with full fields (assignee, custom_fields, sections) |
 | task       | t       | `asana t [-v] [-j] [<index\|gid>]`                                   | one task detail. `-v` adds comments+history, `-j` JSON (task+stories+attachments)                                 |
 | projects   | ps      | `asana ps [query] [-l N]`                                            | list projects; `query` searches by name server-side                                                               |
+| project    | p       | `asana p <gid> [-j]`                                                 | details for one project: name, URL, team, owner, dates, status, notes. `-j` for full JSON                        |
 | sections   | sec     | `asana sec -p <project> [-n] [-r]`                                   | sections/columns of a project (cached per project)                                                                |
 | create     | cr      | `asana cr [-p <project>] [-s <section>] [-b <body>] "<name>"`        | **flags before the name**. Prints new gid                                                                         |
 | comment    | cm      | `asana cm <index\|gid>`                                              | opens `$EDITOR`; write, save, close to post                                                                       |
@@ -55,7 +56,9 @@ Get field and option gids from `asana cf -p <project>`.
 ## Output shapes (for parsing)
 
 - `ts` line: `<idx> <gid> [<type>] <section> [ <due> ] <name>` — type/section/due appear only when set.
+- `ts -j`: JSON array of task objects with `gid`, `name`, `completed`, `due_on`, `resource_subtype`, `memberships` (section), `assignee`, `custom_fields`.
 - `ps` line: `<idx> <gid> <name>`.
+- `p` text: `<gid>  <name>` then indented metadata lines; `p -j`: full `Project_t` JSON.
 - `sec` / enum options: `<gid> <name>` (cf top-level: `<gid> <name> (<type>)`).
 - `cms` line: `<idx> <story_gid>  by <author> (<ts>)` then the comment text on the next line.
 - `create` → `created <gid> <name>`; `done` → `DONE! : <name>`.
