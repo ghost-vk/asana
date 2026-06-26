@@ -1,65 +1,32 @@
 [![release](https://github.com/ghost-vk/asana/actions/workflows/release.yml/badge.svg)](https://github.com/ghost-vk/asana/actions/workflows/release.yml)
 
-OverView
-=========================================
+# asana
 
-[Asana](https://asana.com/) command line client implemented in Go.
+Asana command-line client, written in Go. Run it yourself in the terminal, or let an
+AI agent (Claude Code, Codex, Hermes) drive it through the bundled skills.
 
+## Features
 
-Claude Code plugin
-=========================================
-
-This repo ships as a [Claude Code](https://docs.claude.com/en/docs/claude-code) plugin: it bundles
-skills that let Claude install the CLI and drive it for you (list/create/complete tasks, comments,
-projects, custom fields, etc.).
-
-    /plugin marketplace add ghost-vk/asana
-    /plugin install asana@asana
-
-Then just ask Claude in plain language, e.g. "show my asana tasks" or "create a task in project X".
-The `asana` skill teaches Claude the CLI; the `asana-install` skill installs the binary if it's missing.
+- Tasks — list, create, complete, set due date, edit body/notes
+- Projects — list, search, and view full details
+- Sections/columns and custom fields
+- Comments — post (in `$EDITOR`) and read
+- Attachments — download
+- Index- or GID-based addressing, with a short-lived cache for fast indexing
+- Plain-text output for humans, JSON (`-j`) for scripts and agents
 
 
-Codex plugin
-=========================================
+## Install
 
-This repo also ships as a Codex plugin via `.codex-plugin/plugin.json`. It uses the same
-`skills/asana` and `skills/asana-install` skills so Codex can install the CLI and drive Asana tasks,
-projects, comments, sections, and custom fields.
-
-    codex plugin marketplace add ghost-vk/asana
-    codex plugin add asana@asana
-
-Then just ask Codex in plain language, e.g. "show my asana tasks" or "create a task in project X".
-
-
-Hermes Agent skills
-=========================================
-
-This repo can be used as a [Hermes Agent](https://hermes-agent.nousresearch.com/docs) skills tap.
-It exposes the same `asana` and `asana-install` skills so Hermes can install the CLI and operate
-Asana tasks, projects, comments, sections, and custom fields.
-
-    hermes skills tap add ghost-vk/asana
-    hermes skills install ghost-vk/asana/asana
-    hermes skills install ghost-vk/asana/asana-install
-
-Then start a new Hermes session, or run `/reload-skills` in an existing one.
-
-
-Install
-=========================================
-
-Requirements: go
-
-### Mac OS X
+### macOS
 
     $ brew install ghost-vk/tap/asana
 
+### Other
 
-### Others
+    $ go install github.com/ghost-vk/asana@latest
 
-    $ go get github.com/ghost-vk/asana
+Requires Go for the `go install` route.
 
 
 Usage
@@ -81,6 +48,7 @@ Usage
        workspaces, w        get workspaces
        tasks, ts            get tasks
        projects, ps         get projects
+       project, p           get project details
        sections, sec        get sections/columns of a project
        create, cr           create a task
        task, t              get a task
@@ -178,6 +146,10 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
     1 1211297085634051 [S] Engineering Sprint Banner refresh
     2 1207951833057398 milestone [R] Released Release v2
 
+`-j` outputs all tasks as JSON with full fields (assignee, custom fields, sections, subtype) — handy for scripting or agent-side grouping by section/assignee/type.
+
+    $ asana ts -p 1202689990538470 -j
+
 
 ### Projects
 
@@ -191,6 +163,25 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
 Pass a query to search by name (server-side, whole workspace):
 
     $ asana ps ID-1916
+
+
+### Project details
+
+`asana project <gid>` (alias `p`) shows details for a single project: name, URL, workspace, team, owner, dates, current status, and notes.
+
+    $ asana p 1202689990538470
+
+    1202689990538470  ID-1916 [Ops] Website redesign
+      url:       https://app.asana.com/0/1202689990538470/...
+      workspace: My Workspace
+      team:      Engineering
+      owner:     Alice
+      created:   2024-01-01T00:00:00.000Z
+      [green] On track (by Alice, 2024-06-01T00:00:00.000Z)
+
+`-j` outputs full JSON.
+
+    $ asana p 1202689990538470 -j
 
 
 ### Sections
@@ -271,13 +262,6 @@ Or, `today` or `tomorrow`.
     $ asana due 5 today
 
 
-### Set task body
-
-`asana body <index> <text>` sets the body (notes) of an existing task.
-
-    $ asana body 2 "Updated description with details"
-
-
 ### Comment
 
 `asana comment <index>` or `asana cm <index>` enable you to post new comment for the task.
@@ -286,9 +270,9 @@ Or, `today` or `tomorrow`.
 
 This command opens editor. Write comment, save and close.
 
-![](https://raw.githubusercontent.com/ghost-vk/asana/images/cmt.webp)
+<p align="center"><img src="https://raw.githubusercontent.com/ghost-vk/asana/images/cmt.webp" width="842" alt="compose comment in editor"></p>
 
-![](https://raw.githubusercontent.com/ghost-vk/asana/images/cmt-result.webp)
+<p align="center"><img src="https://raw.githubusercontent.com/ghost-vk/asana/images/cmt-result.webp" width="567" alt="posted comment"></p>
 
 You can change editor by updating `$EDITOR` environment variable.
 
@@ -312,34 +296,45 @@ Pass `-g <story_gid>` to read a single comment by its gid.
     // => open browser
 
 
-### Custom fields
+### Download an attachment
 
-`asana fields -p <project_gid>` (alias `cf`) lists all custom fields for a project with their types and, for enum fields, available options.
+`asana download` (alias `dl`) downloads an attachment. Attachment indices come from `asana t <index>`.
 
-    $ asana cf -p 1202689990538470
+    $ asana dl <task_index> <att_index>
+    $ asana dl <att_gid> -o <path>
 
-    1198862357412455 Type (enum)
-      1198862357412458 Feature
-      1199105780031551 Bug
-    1199542488281138 Priority (enum)
-      1199542488281141 High
-      1199542488281142 Medium
 
-`asana set-field` (alias `sf`) sets a custom field value on a task by GID.
+Use with an AI agent
+=========================================
 
-    $ asana sf -t <task_gid> -f <field_gid> -V <value>
+This repo doubles as a skills package. It ships the `asana` and `asana-install` skills, so
+an agent can install the CLI and operate Asana for you — list/create/complete tasks,
+comments, projects, sections, and custom fields. Once installed, just ask in plain
+language, e.g. "show my asana tasks" or "create a task in project X".
 
-    # enum: pass the option gid
-    $ asana sf -t 1216060636060282 -f 1198862357412455 -V 1198862357412458
+### Claude Code
 
-    # text
-    $ asana sf -t 1216060636060282 -f 1198862900000001 -V "in review"
+[Claude Code](https://docs.claude.com/en/docs/claude-code) plugin:
 
-    # number
-    $ asana sf -t 1216060636060282 -f 1198862900000002 -V 42
+    /plugin marketplace add ghost-vk/asana
+    /plugin install asana@asana
 
-    # clear (any type)
-    $ asana sf -t 1216060636060282 -f 1198862357412455 -V null
+### Codex
+
+Codex plugin (via `.codex-plugin/plugin.json`):
+
+    codex plugin marketplace add ghost-vk/asana
+    codex plugin add asana@asana
+
+### Hermes
+
+[Hermes Agent](https://hermes-agent.nousresearch.com/docs) skills tap:
+
+    hermes skills tap add ghost-vk/asana
+    hermes skills install ghost-vk/asana/asana
+    hermes skills install ghost-vk/asana/asana-install
+
+Then start a new Hermes session, or run `/reload-skills` in an existing one.
 
 
 TODO
