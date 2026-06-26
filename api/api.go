@@ -2,6 +2,7 @@ package api
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -68,7 +69,7 @@ func fire(req *http.Request) []byte {
 	utils.Check(err)
 
 	if resp.StatusCode >= 300 {
-		println(resp.Status)
+		log.Fatalf("fatal: %s", resp.Status)
 	}
 
 	return body

@@ -159,6 +159,12 @@ func FindTaskId(index string, autoFirst bool) string {
 			index = "0"
 		}
 	}
+	// ponytail: GID is 16+ digits; skip cache lookup
+	if len(index) >= 10 {
+		if _, err := strconv.ParseUint(index, 10, 64); err == nil {
+			return index
+		}
+	}
 
 	var id string
 	txt, err := ioutil.ReadFile(utils.CacheFile())
