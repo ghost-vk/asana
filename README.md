@@ -134,9 +134,9 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
 
     $ asana ts -p 1202689990538470
 
-    0 1214634990237303 Raw Signals 📋        Доработки по порталу
-    1 1211297085634051 [S] Engineering Sprint Обновление баннера
-    2 1207951833057398 milestone [R] Released Релиз v2
+    0 1214634990237303 Raw Signals 📋        Portal updates
+    1 1211297085634051 [S] Engineering Sprint Banner refresh
+    2 1207951833057398 milestone [R] Released Release v2
 
 
 ### Projects
@@ -145,7 +145,7 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
 
     $ asana ps
 
-    0 1202689990538470 ID-1916 [ДИТ] Редизайн ММЦ
+    0 1202689990538470 ID-1916 [Ops] Website redesign
     1 1202773036545383 Design System
 
 Pass a query to search by name (server-side, whole workspace):
@@ -246,7 +246,9 @@ Or, `today` or `tomorrow`.
 
 This command opens editor. Write comment, save and close.
 
-![](https://raw.githubusercontent.com/thash/asana/images/cmt.png)
+![](https://raw.githubusercontent.com/ghost-vk/asana/images/cmt.webp)
+
+![](https://raw.githubusercontent.com/ghost-vk/asana/images/cmt-result.webp)
 
 You can change editor by updating `$EDITOR` environment variable.
 
