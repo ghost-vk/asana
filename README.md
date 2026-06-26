@@ -71,7 +71,7 @@ Usage
 
     paste your Personal Access Token: _ <Copy Token from URL above and paste it.>
 
-![](https://raw.githubusercontent.com/thash/asana/images/token.png)
+![](https://raw.githubusercontent.com/ghost-vk/asana/images/token.webp)
 
 When you paste valid token, your workspaces will be displayed.
 
