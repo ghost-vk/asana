@@ -33,6 +33,20 @@ projects, comments, sections, and custom fields.
 Then just ask Codex in plain language, e.g. "show my asana tasks" or "create a task in project X".
 
 
+Hermes Agent skills
+=========================================
+
+This repo can be used as a [Hermes Agent](https://hermes-agent.nousresearch.com/docs) skills tap.
+It exposes the same `asana` and `asana-install` skills so Hermes can install the CLI and operate
+Asana tasks, projects, comments, sections, and custom fields.
+
+    hermes skills tap add ghost-vk/asana
+    hermes skills install ghost-vk/asana/asana
+    hermes skills install ghost-vk/asana/asana-install
+
+Then start a new Hermes session, or run `/reload-skills` in an existing one.
+
+
 Install
 =========================================
 
