@@ -1,6 +1,6 @@
 ---
 name: asana
-description: Drive the `asana` command-line client (github.com/ghost-vk/asana) to manage Asana tasks from the terminal — list/read tasks, create them, complete, set due dates, edit body/comments, manage projects, sections and custom fields, download attachments. Use this whenever the user wants to interact with Asana via the CLI: "show my asana tasks", "create an asana task in project X", "mark task 3 done", "set due date", "comment on a task", "what's in this Asana project", or any time the `asana` command is the right tool. Read it before composing `asana` commands so you get the index/gid addressing and required flags right.
+description: CLI for interacting with Asana. Use when working with Asana tasks, projects, or comments
 ---
 
 # asana CLI

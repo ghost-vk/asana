@@ -20,6 +20,14 @@ Then just ask Claude in plain language, e.g. "show my asana tasks" or "create a 
 The `asana` skill teaches Claude the CLI; the `asana-install` skill installs the binary if it's missing.
 
 
+Codex plugin
+=========================================
+
+This repo also ships as a Codex plugin via `.codex-plugin/plugin.json`. It uses the same
+`skills/asana` and `skills/asana-install` skills so Codex can install the CLI and drive Asana tasks,
+projects, comments, sections, and custom fields.
+
+
 Install
 =========================================
 

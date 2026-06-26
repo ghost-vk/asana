@@ -1,0 +1,31 @@
+{
+  "name": "asana",
+  "version": "0.1.0",
+  "description": "Install and drive the asana CLI from Codex.",
+  "author": {
+    "name": "ghost-vk"
+  },
+  "homepage": "https://github.com/ghost-vk/asana",
+  "repository": "https://github.com/ghost-vk/asana",
+  "keywords": [
+    "asana",
+    "cli",
+    "tasks"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Asana",
+    "shortDescription": "Install and drive the asana CLI from Codex.",
+    "longDescription": "Adds Codex skills for installing the asana CLI and using it to work with Asana tasks, projects, sections, comments, and custom fields.",
+    "developerName": "ghost-vk",
+    "category": "Productivity",
+    "capabilities": [
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Help me use the asana CLI.",
+      "Install the asana CLI.",
+      "Show my Asana tasks."
+    ]
+  }
+}
