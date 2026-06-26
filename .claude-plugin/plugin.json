@@ -1,0 +1,7 @@
+{
+  "name": "asana",
+  "description": "Install and drive the asana CLI from Claude Code",
+  "version": "0.1.0",
+  "author": { "name": "ghost-vk" },
+  "homepage": "https://github.com/ghost-vk/asana"
+}

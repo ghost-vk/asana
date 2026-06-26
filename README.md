@@ -6,6 +6,20 @@ OverView
 [Asana](https://asana.com/) command line client implemented in Go.
 
 
+Claude Code plugin
+=========================================
+
+This repo ships as a [Claude Code](https://docs.claude.com/en/docs/claude-code) plugin: it bundles
+skills that let Claude install the CLI and drive it for you (list/create/complete tasks, comments,
+projects, custom fields, etc.).
+
+    /plugin marketplace add ghost-vk/asana
+    /plugin install asana@asana
+
+Then just ask Claude in plain language, e.g. "show my asana tasks" or "create a task in project X".
+The `asana` skill teaches Claude the CLI; the `asana-install` skill installs the binary if it's missing.
+
+
 Install
 =========================================
 

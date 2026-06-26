@@ -16,9 +16,19 @@ type Conf struct {
 }
 
 func Load() Conf {
+	home := utils.Home()
+	paths := []string{
+		home + "/.config/asana-cli/config.yml",
+		home + "/.asana.yml",
+	}
 	var dat []byte
 	var err error
-	dat, err = ioutil.ReadFile(utils.Home() + "/.asana.yml")
+	for _, p := range paths {
+		dat, err = ioutil.ReadFile(p)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		fmt.Println("Config file isn't set.\n  ==> $ asana config")
 		os.Exit(1)

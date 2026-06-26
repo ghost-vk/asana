@@ -1,0 +1,11 @@
+{
+  "name": "asana",
+  "owner": { "name": "ghost-vk" },
+  "plugins": [
+    {
+      "name": "asana",
+      "source": "./",
+      "description": "Install and drive the asana CLI from Claude Code"
+    }
+  ]
+}
