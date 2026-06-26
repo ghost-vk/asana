@@ -11,6 +11,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/ghost-vk/asana/api"
+	"github.com/ghost-vk/asana/config"
 	"github.com/ghost-vk/asana/utils"
 )
 
@@ -26,7 +27,14 @@ func Comment(c *cli.Context) {
 	err = template(f, task, stories)
 	utils.Check(err)
 
-	cmd := exec.Command(os.Getenv("EDITOR"), tmpFile)
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = config.Load().Editor
+	}
+	if editor == "" {
+		editor = "vi"
+	}
+	cmd := exec.Command(editor, tmpFile)
 	cmd.Stdin, cmd.Stdout = os.Stdin, os.Stdout
 	err = cmd.Run()
 

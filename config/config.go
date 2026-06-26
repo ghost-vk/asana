@@ -11,7 +11,8 @@ import (
 
 type Conf struct {
 	Personal_access_token string
-	Workspace int
+	Workspace             int
+	Editor                string
 }
 
 func Load() Conf {
