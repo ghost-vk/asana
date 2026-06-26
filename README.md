@@ -27,6 +27,11 @@ This repo also ships as a Codex plugin via `.codex-plugin/plugin.json`. It uses 
 `skills/asana` and `skills/asana-install` skills so Codex can install the CLI and drive Asana tasks,
 projects, comments, sections, and custom fields.
 
+    codex plugin marketplace add ghost-vk/asana
+    codex plugin add asana@asana
+
+Then just ask Codex in plain language, e.g. "show my asana tasks" or "create a task in project X".
+
 
 Install
 =========================================
