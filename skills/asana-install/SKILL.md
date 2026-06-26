@@ -54,4 +54,4 @@ The CLI needs an Asana Personal Access Token:
 asana config
 ```
 
-It prints the URL to create a token (Asana → Settings → Apps → Personal Access Tokens), then prompts you to paste it and pick a workspace. Config is saved to `~/.asana.yml`.
+It prints the URL to create a token (Asana → Settings → Apps → Personal Access Tokens), then prompts you to paste it and pick a workspace. The CLI reads config from `~/.config/asana-cli/config.yml` first, with `~/.asana.yml` as a fallback; `asana config` writes `~/.asana.yml`.
