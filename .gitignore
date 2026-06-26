@@ -1,3 +1,4 @@
 /asana
 *.test
 *.diff
+.serena
