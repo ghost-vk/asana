@@ -21,7 +21,7 @@ const (
 func Tasks(c *cli.Context) {
 	limit := c.Int("limit")
 	if project := c.String("project"); project != "" {
-		fromAPI(false, limit, project) // project tasks: skip cache, it's for "my tasks"
+		fromAPI(true, limit, project)
 		return
 	}
 	if c.Bool("no-cache") {
