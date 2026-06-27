@@ -184,6 +184,15 @@ func Task(taskId string, verbose bool) (Task_t, []Story_t) {
 	return t["data"], stories
 }
 
+func TaskProjects(taskId string) Task_t {
+	params := url.Values{}
+	params.Add("opt_fields", "projects.gid,projects.name")
+	var output map[string]Task_t
+	err := json.Unmarshal(Get("/api/1.0/tasks/"+taskId, params), &output)
+	utils.Check(err)
+	return output["data"]
+}
+
 func Attachments(taskId string) []Attachment_t {
 	var attachments map[string][]Attachment_t
 	err := json.Unmarshal(Get("/api/1.0/tasks/"+taskId+"/attachments", nil), &attachments)
@@ -284,6 +293,26 @@ func CreateTask(name, project, section, notes string) Task_t {
 
 func DeleteTask(taskId string) {
 	Delete("/tasks/" + taskId)
+}
+
+func AddProject(taskId, projectId, sectionId string) {
+	Post("/tasks/"+taskId+"/addProject", addProjectPayload(projectId, sectionId))
+}
+
+func RemoveProject(taskId, projectId string) {
+	Post("/tasks/"+taskId+"/removeProject", removeProjectPayload(projectId))
+}
+
+func addProjectPayload(projectId, sectionId string) string {
+	data := `{"data":{"project":` + strconv.Quote(projectId)
+	if sectionId != "" {
+		data += `,"section":` + strconv.Quote(sectionId)
+	}
+	return data + `}}`
+}
+
+func removeProjectPayload(projectId string) string {
+	return `{"data":{"project":` + strconv.Quote(projectId) + `}}`
 }
 
 func Update(taskId string, key string, value string) Task_t {
