@@ -14,6 +14,12 @@ import (
 	"github.com/ghost-vk/asana/utils"
 )
 
+const asanaTaskPageSize = 100
+
+var fetchTasksPage = func(params url.Values) []byte {
+	return Get("/api/1.0/tasks", params)
+}
+
 type CustomField_t struct {
 	Gid          string `json:"gid"`
 	Name         string `json:"name"`
@@ -91,16 +97,45 @@ func Tasks(params url.Values, withCompleted bool, detailed bool) []Task_t {
 	if !withCompleted {
 		params.Set("completed_since", "now") // фильтруем на стороне Asana, иначе limit съедают старые завершённые
 	}
-	if params.Get("limit") == "" {
-		params.Set("limit", "100") // ponytail: Asana rejects unpaginated /tasks as "too large"
+	limit := asanaTaskPageSize
+	if raw := params.Get("limit"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			limit = parsed
+		}
 	}
-	var tasks struct {
-		Data []Task_t `json:"data"`
+	if limit <= 0 {
+		limit = asanaTaskPageSize
 	}
-	err := json.Unmarshal(Get("/api/1.0/tasks", params), &tasks)
-	utils.Check(err)
+	params = cloneURLValues(params)
+
+	remaining := limit
+	collected := make([]Task_t, 0, remaining)
+	for remaining > 0 {
+		pageLimit := asanaTaskPageSize
+		if remaining < asanaTaskPageSize {
+			pageLimit = remaining
+		}
+		params.Set("limit", strconv.Itoa(pageLimit))
+
+		var response struct {
+			Data     []Task_t `json:"data"`
+			NextPage *struct {
+				Offset string `json:"offset"`
+			} `json:"next_page"`
+		}
+
+		err := json.Unmarshal(fetchTasksPage(params), &response)
+		utils.Check(err)
+		collected = append(collected, response.Data...)
+		remaining -= len(response.Data)
+
+		if remaining <= 0 || response.NextPage == nil || response.NextPage.Offset == "" || len(response.Data) == 0 {
+			break
+		}
+		params.Set("offset", response.NextPage.Offset)
+	}
 	var tasks_without_due, tasks_with_due []Task_t
-	for _, t := range tasks.Data {
+	for _, t := range collected {
 		if !withCompleted && t.Completed {
 			continue
 		}
@@ -112,6 +147,14 @@ func Tasks(params url.Values, withCompleted bool, detailed bool) []Task_t {
 	}
 	sort.Sort(ByDue(tasks_with_due))
 	return append(tasks_with_due, tasks_without_due...)
+}
+
+func cloneURLValues(values url.Values) url.Values {
+	clone := make(url.Values, len(values))
+	for k, v := range values {
+		clone[k] = append([]string{}, v...)
+	}
+	return clone
 }
 
 func Task(taskId string, verbose bool) (Task_t, []Story_t) {
