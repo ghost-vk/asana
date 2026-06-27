@@ -69,6 +69,18 @@ func TestTasksPaginateByLimit(t *testing.T) {
 	}
 }
 
+func TestMoveProjectPayloads(t *testing.T) {
+	if got, want := addProjectPayload("123", "456"), `{"data":{"project":"123","section":"456"}}`; got != want {
+		t.Fatalf("addProjectPayload = %s, want %s", got, want)
+	}
+	if got, want := addProjectPayload("123", ""), `{"data":{"project":"123"}}`; got != want {
+		t.Fatalf("addProjectPayload without section = %s, want %s", got, want)
+	}
+	if got, want := removeProjectPayload("123"), `{"data":{"project":"123"}}`; got != want {
+		t.Fatalf("removeProjectPayload = %s, want %s", got, want)
+	}
+}
+
 func taskListResponse(data []Task_t, nextOffset string) []byte {
 	response := struct {
 		Data     []Task_t `json:"data"`

@@ -109,6 +109,19 @@ func defs() []*cli.Command {
 			},
 		},
 		{
+			Name:  "move",
+			Usage: "move or copy a task between projects",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "target project gid"},
+				&cli.StringFlag{Name: "section", Aliases: []string{"s"}, Usage: "target section gid"},
+				&cli.BoolFlag{Name: "copy", Aliases: []string{"c"}, Usage: "copy only; do not remove the source project"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Move(c)
+				return nil
+			},
+		},
+		{
 			Name:    "task",
 			Aliases: []string{"t"},
 			Usage:   "get a task",

@@ -33,6 +33,7 @@ When an index is omitted, `task`, `due`, `comments` default to index `0` (top ta
 | project    | p       | `asana p <gid> [-j]`                                                 | details for one project: name, URL, team, owner, dates, status, notes. `-j` for full JSON                        |
 | sections   | sec     | `asana sec -p <project> [-n] [-r]`                                   | sections/columns of a project (cached per project)                                                                |
 | create     | cr      | `asana cr [-p <project>] [-s <section>] [-b <body>] "<name>"`        | **flags before the name**. Prints new gid                                                                         |
+| move       | —       | `asana move <index\|gid> -p <project> [-s <section>] [-c]`           | moves a task to another project/section; `-c` copies instead of removing the source project                      |
 | comment    | cm      | `asana cm <index\|gid>`                                              | opens `$EDITOR`; write, save, close to post                                                                       |
 | comments   | cms     | `asana cms <index\|gid>` / `asana cms -g <story_gid>`                | list comments, or read one by story gid                                                                           |
 | done       | —       | `asana done <index\|gid>`                                            | complete the task                                                                                                 |
@@ -68,3 +69,4 @@ Get field and option gids from `asana cf -p <project>`.
 1. `asana ps <query>` to find a project gid, or `asana ts` for your tasks.
 2. To act inside a project: `asana ts -p <project_gid>` (this caches indices), then target tasks by the printed gid (robust) or index.
 3. For project-scoped writes you usually need gids from `ps`/`sec`/`cf` first.
+4. Use `asana move <index|gid> -p <target_project_gid> [-s <target_section_gid>] [-c]` to move or copy a task across projects.

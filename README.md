@@ -51,6 +51,7 @@ Usage
        project, p           get project details
        sections, sec        get sections/columns of a project
        create, cr           create a task
+       move                 move or copy a task between projects
        task, t              get a task
        comment, cm          Post comment
        comments, cms        list or read comments of a task
@@ -206,6 +207,10 @@ Use the printed section gid as `-s` when creating a task.
     $ asana create -p <project_gid> -b "task description here" "task name"
 
 `-p` adds the task to a project, `-s` puts it into a section/column, `-b` sets the body (notes).
+
+### Move or copy a task
+
+`asana move <index|gid> -p <target_project_gid> [-s <target_section_gid>] [-c]` moves a task to another project. By default it removes the task from its single source project after adding it to the target project/section. `-c`/`--copy` skips the removal step and only adds the target project membership.
 
 
 ### Task body (notes)
