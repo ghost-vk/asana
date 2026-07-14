@@ -5,10 +5,16 @@ release:
 
 builds:
   - env: [CGO_ENABLED=0]
-    goos: [darwin, linux]
+    goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
     ldflags:
       - -s -w -X main.version={{.Version}}
+
+archives:
+  # Windows users expect .zip; leave darwin/linux on the default tar.gz.
+  - format_overrides:
+      - goos: windows
+        formats: [zip]
 
 homebrew_casks:
   - name: asana
