@@ -15,6 +15,15 @@ type Conf struct {
 	Editor                string
 }
 
+// tokenOverride lets `asana config` validate a freshly supplied token against
+// the API before it is persisted, so a bad token never lands in the config
+// file. ponytail: package global, adequate for a single-shot CLI.
+var tokenOverride string
+
+// SetToken makes token the effective Personal Access Token for subsequent
+// Load() calls, without writing anything to disk.
+func SetToken(token string) { tokenOverride = token }
+
 func Load() Conf {
 	home := utils.Home()
 	paths := []string{
@@ -29,12 +38,15 @@ func Load() Conf {
 			break
 		}
 	}
-	if err != nil {
+	conf := Conf{}
+	if err == nil {
+		utils.Check(yaml.Unmarshal(dat, &conf))
+	} else if tokenOverride == "" {
 		fmt.Println("Config file isn't set.\n  ==> $ asana config")
 		os.Exit(1)
 	}
-	conf := Conf{}
-	err = yaml.Unmarshal(dat, &conf)
-	utils.Check(err)
+	if tokenOverride != "" {
+		conf.Personal_access_token = tokenOverride
+	}
 	return conf
 }

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 
@@ -14,20 +15,29 @@ import (
 )
 
 func Config(c *cli.Context) {
-	_, err := ioutil.ReadFile(utils.Home() + "/.asana.yml")
-	if err != nil || config.Load().Personal_access_token == "" {
+	path := utils.Home() + "/.asana.yml"
+
+	// Token priority: CLI argument > existing config > interactive prompt.
+	token := c.Args().First()
+	if token == "" {
+		if _, err := ioutil.ReadFile(path); err == nil {
+			token = config.Load().Personal_access_token
+		}
+	}
+	if token == "" {
 		println("visit: http://app.asana.com/-/account_api")
 		println("  Settings > Apps > Manage Developer Apps > Personal Access Tokens")
 		println("  + Create New Personal Access Token")
 		print("\npaste your Personal Access Token: ")
-		var s string
-		fmt.Scanf("%s", &s)
-
-		f, _ := os.Create(utils.Home() + "/.asana.yml")
-		defer f.Close()
-		f.WriteString("personal_access_token: " + s + "\n")
+		fmt.Scanf("%s", &token)
+	}
+	if token == "" {
+		log.Fatal("fatal: no Personal Access Token provided")
 	}
 
+	// Validate the token against the API before writing anything: Me() fatals
+	// on a bad token (e.g. 401) so an invalid credential never gets persisted.
+	config.SetToken(token)
 	ws := api.Me().Workspaces
 	index := 0
 
@@ -38,8 +48,9 @@ func Config(c *cli.Context) {
 		}
 		index = utils.EndlessSelect(len(ws)-1, index)
 	}
-	token := config.Load().Personal_access_token
-	f, _ := os.Create(utils.Home() + "/.asana.yml")
+
+	f, _ := os.Create(path)
+	defer f.Close()
 	f.WriteString("personal_access_token: " + token + "\n")
 	f.WriteString("workspace: " + ws[index].Gid + "\n")
 }
