@@ -2,18 +2,32 @@ package main
 
 import (
 	"os"
+	"runtime/debug"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/ghost-vk/asana/commands"
 )
 
+// version is injected by goreleaser via ldflags; stays "dev" for `go build`.
 var version = "dev"
+
+// resolveVersion falls back to the module version embedded by `go install`,
+// which ldflags don't cover, so `asana version` isn't stuck on "dev".
+func resolveVersion() string {
+	if version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return version
+}
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "asana"
-	app.Version = version
+	app.Version = resolveVersion()
 	app.Usage = "asana cui client ( https://github.com/ghost-vk/asana )"
 
 	app.Commands = defs()
