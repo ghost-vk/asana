@@ -14,6 +14,13 @@ func Task(c *cli.Context) {
 	t, stories := api.Task(taskId, c.Bool("verbose"))
 	attachments := api.Attachments(taskId)
 
+	// html_notes is absent from the default task record, so fetch it only when
+	// the output will actually show it.
+	richBody := c.Bool("html")
+	if richBody || c.Bool("json") {
+		t.HtmlNotes = api.TaskHtmlNotes(taskId)
+	}
+
 	if c.Bool("json") {
 		output := map[string]interface{}{
 			"task": t,
@@ -39,7 +46,11 @@ func Task(c *cli.Context) {
 	showCustomFields(t.CustomFields)
 	showAttachments(attachments)
 
-	fmt.Printf("\n%s\n", t.Notes)
+	body := t.Notes
+	if richBody {
+		body = t.HtmlNotes
+	}
+	fmt.Printf("\n%s\n", body)
 
 	if stories != nil {
 		fmt.Printf("\n----------------------------------------\n")

@@ -17,6 +17,15 @@ import (
 
 func Comment(c *cli.Context) {
 	taskId := api.FindTaskId(c.Args().First(), false)
+	format := resolveFormat(c)
+
+	// --file/stdin skips the editor entirely, which also skips the '#' comment
+	// stripping below - markdown headings would not survive it.
+	if body, given := readBody(c, "", false); given && body != "" {
+		postComment(taskId, body, format)
+		return
+	}
+
 	task, stories := api.Task(taskId, true)
 
 	tmpFile := os.TempDir() + "/asana_comment.txt"
@@ -42,14 +51,18 @@ func Comment(c *cli.Context) {
 
 	utils.Check(err)
 
-	postComment := trim(string(txt))
-	if postComment != "" {
-		commented := api.CommentTo(taskId, postComment)
-		fmt.Println("Commented on Task: \"" + task.Name + "\"\n")
-		fmt.Println(commented)
-	} else {
+	body := trim(string(txt), format)
+	if body == "" {
 		fmt.Println("Aborting comment due to empty content.")
+		return
 	}
+	fmt.Println("Commented on Task: \"" + task.Name + "\"\n")
+	postComment(taskId, body, format)
+}
+
+func postComment(taskId, body string, format bodyFormat) {
+	payload, html := prepareBody(body, format)
+	fmt.Println(api.CommentTo(taskId, payload, html))
 }
 
 func template(f *os.File, task api.Task_t, stories []api.Story_t) error {
@@ -69,10 +82,20 @@ func commentOut(txt string) string {
 	return strings.Replace("# "+txt, "\n", "\n# ", -1)
 }
 
-func trim(txt string) string {
+// templateStart marks the first line of the read-only block the editor template
+// appends. In markdown mode only that block is cut, so that '#' headings the
+// user typed above it survive; plain mode keeps the historical behaviour of
+// dropping every '#' line.
+var templateStart = regexp.MustCompile(`(?m)^# ={3,}\s*$`)
+
+func trim(txt string, format bodyFormat) string {
 	var result string
-	result = regexp.MustCompile("#.*\n").ReplaceAllString(txt, "")    // Remove comments
-	result = regexp.MustCompile("\n*$").ReplaceAllString(result, "")  // Remove blank lines
-	result = regexp.MustCompile("\n").ReplaceAllString(result, "\\n") // Escape
-	return result
+	if format == formatPlain {
+		result = regexp.MustCompile("#.*\n").ReplaceAllString(txt, "") // Remove comments
+	} else if loc := templateStart.FindStringIndex(txt); loc != nil {
+		result = txt[:loc[0]]
+	} else {
+		result = txt
+	}
+	return strings.Trim(result, "\n")
 }

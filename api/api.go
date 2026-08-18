@@ -60,16 +60,20 @@ func fire(req *http.Request) []byte {
 	client := &http.Client{}
 
 	req.Header.Set("User-Agent", UserAgent)
-	req.Header.Set("Authorization", "Bearer " + config.Load().Personal_access_token)
+	req.Header.Set("Authorization", "Bearer "+config.Load().Personal_access_token)
 	req.Header.Set("Content-Type", "application/json") // ponytail: harmless on GET, required for POST/PUT JSON bodies
 
 	resp, err := client.Do(req)
-	body, err := ioutil.ReadAll(resp.Body)
+	utils.Check(err)
+	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
 	utils.Check(err)
 
 	if resp.StatusCode >= 300 {
-		log.Fatalf("fatal: %s", resp.Status)
+		// Asana explains rejections in the body: an html_notes typo comes back
+		// as xml_parsing_error, which the bare status line would swallow.
+		log.Fatalf("fatal: %s\n%s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
 	return body

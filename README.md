@@ -8,6 +8,7 @@ AI agent (Claude Code, Codex, Hermes) drive it through the bundled skills.
 ## Features
 
 - Tasks — list, create, complete, set due date, edit body/notes
+- Rich text — write task bodies and comments as markdown or Asana HTML
 - Projects — list, search, and view full details
 - Sections/columns and custom fields
 - Comments — post (in `$EDITOR`) and read
@@ -57,7 +58,7 @@ Usage
        comments, cms        list or read comments of a task
        done                 Complete task
        due                  set due date
-       body                 set task body (notes)
+       body                 set task body (notes or rich text)
        fields, cf           list custom fields of a project
        set-field, sf        set a custom field value on a task
        delete, rm           delete a task by gid
@@ -206,7 +207,7 @@ Use the printed section gid as `-s` when creating a task.
     $ asana create -p <project_gid> -s <section_gid> "task in a column"
     $ asana create -p <project_gid> -b "task description here" "task name"
 
-`-p` adds the task to a project, `-s` puts it into a section/column, `-b` sets the body (notes).
+`-p` adds the task to a project, `-s` puts it into a section/column, `-b` sets the body (notes). Add `--md` or `--html` — and optionally `-f <file>` — to set a rich-text body instead; see [Rich text](#rich-text).
 
 ### Move or copy a task
 
@@ -220,6 +221,32 @@ Use the printed section gid as `-s` when creating a task.
     $ asana body 0 "Updated description, multiple words."
 
 Newlines and quotes inside the text are preserved. Pass an empty string to clear the body.
+
+
+### Rich text
+
+`notes` is plain text — markdown pasted into it renders verbatim. `--md` and `--html`
+write Asana's rich-text field (`html_notes`) instead, and work on `body`, `create` and
+`comment` alike:
+
+    $ asana body --md <gid> -f spec.md
+    $ cat spec.md | asana body --md -f - <gid>
+    $ asana create --md -f spec.md -p <project_gid> "Spec"
+    $ asana comment --md -f review.md <gid>
+
+`--md` converts markdown; `--html` takes Asana rich-text HTML as is. Both accept the
+body as an argument or from `-f <file>` (`-f -` reads stdin) — specs run to tens of
+kilobytes, which is more than a comfortable command-line argument.
+
+Asana parses that field as strict XML over a small tag whitelist —
+`body h1 h2 ul ol li strong em u s code pre blockquote a hr` — and answers every
+violation with the same opaque `xml_parsing_error`. Notably `<p>` is not supported
+(paragraphs are plain newlines) and `<hr>` must be written `<hr/>`. `--html` validates
+locally first and names the offending tag; `--md` produces a conforming document by
+construction, collapsing `h3` and deeper into `h2`, turning images into links and
+tables into text rows.
+
+Read it back with `asana t --html <gid>`, or `asana t -j` which includes `html_notes`.
 
 
 ### Custom fields

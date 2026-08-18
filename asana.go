@@ -111,12 +111,12 @@ func defs() []*cli.Command {
 		{
 			Name:    "create",
 			Aliases: []string{"cr"},
-			Usage:   "create a task: create [-p project] [-s section] [-b body] <name> (flags before name)",
-			Flags: []cli.Flag{
+			Usage:   "create a task: create [-p project] [-s section] [-b body|-f file] [--md|--html] <name> (flags before name)",
+			Flags: append([]cli.Flag{
 				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "project gid"},
 				&cli.StringFlag{Name: "section", Aliases: []string{"s"}, Usage: "section/column gid"},
-				&cli.StringFlag{Name: "body", Aliases: []string{"b"}, Usage: "task body (notes)"},
-			},
+				&cli.StringFlag{Name: "body", Aliases: []string{"b"}, Usage: "task body"},
+			}, commands.RichTextFlags("read the task body from a file (- for stdin)")...),
 			Action: func(c *cli.Context) error {
 				commands.CreateTask(c)
 				return nil
@@ -142,6 +142,7 @@ func defs() []*cli.Command {
 			Flags: []cli.Flag{
 				&cli.BoolFlag{Name: "verbose", Aliases: []string{"v"}, Usage: "verbose output"},
 				&cli.BoolFlag{Name: "json", Aliases: []string{"j"}, Usage: "output as JSON"},
+				&cli.BoolFlag{Name: "html", Usage: "print the rich-text body (html_notes) instead of notes"},
 			},
 			Action: func(c *cli.Context) error {
 				commands.Task(c)
@@ -151,7 +152,8 @@ func defs() []*cli.Command {
 		{
 			Name:    "comment",
 			Aliases: []string{"cm"},
-			Usage:   "Post comment",
+			Usage:   "post a comment: comment [--md|--html] [-f file] <index>",
+			Flags:   commands.RichTextFlags("read the comment from a file (- for stdin) instead of $EDITOR"),
 			Action: func(c *cli.Context) error {
 				commands.Comment(c)
 				return nil
@@ -187,7 +189,8 @@ func defs() []*cli.Command {
 		},
 		{
 			Name:  "body",
-			Usage: "set task body (notes): body <index> <text>",
+			Usage: "set task body: body [--md|--html] [-f file] <index> [text]",
+			Flags: commands.RichTextFlags("read the body from a file (- for stdin)"),
 			Action: func(c *cli.Context) error {
 				commands.Body(c)
 				return nil

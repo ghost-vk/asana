@@ -50,6 +50,7 @@ type Task_t struct {
 	Modified_at     string          `json:"modified_at"`
 	Name            string          `json:"name"`
 	Notes           string          `json:"notes"`
+	HtmlNotes       string          `json:"html_notes,omitempty"`
 	Assignee        Base            `json:"assignee"`
 	Completed       bool            `json:"completed"`
 	Assignee_status string          `json:"assignee_status"`
@@ -66,6 +67,7 @@ type Task_t struct {
 type Story_t struct {
 	Gid        string
 	Text       string
+	Html_text  string
 	Type       string
 	Created_at string
 	Created_by Base
@@ -184,6 +186,18 @@ func Task(taskId string, verbose bool) (Task_t, []Story_t) {
 	return t["data"], stories
 }
 
+// TaskHtmlNotes fetches the rich-text body separately: Asana leaves html_notes
+// out of the default task record, and asking for it via opt_fields on the main
+// request would replace the whole default field set.
+func TaskHtmlNotes(taskId string) string {
+	params := url.Values{}
+	params.Add("opt_fields", "html_notes")
+	var output map[string]Task_t
+	err := json.Unmarshal(Get("/api/1.0/tasks/"+taskId, params), &output)
+	utils.Check(err)
+	return output["data"].HtmlNotes
+}
+
 func TaskProjects(taskId string) Task_t {
 	params := url.Values{}
 	params.Add("opt_fields", "projects.gid,projects.name")
@@ -254,31 +268,53 @@ func (s Story_t) String() string {
 }
 
 type Commented_t struct {
-	Text string `json:"text"` // Define only required field.
+	Text     string `json:"text"`      // Define only required field.
+	HtmlText string `json:"html_text"` // Set instead of Text when the comment is rich text.
 }
 
-func CommentTo(taskId string, comment string) string {
+// CommentField picks the story field for a comment body. Rich text goes into
+// html_text; Asana rejects a story carrying both fields at once.
+func CommentField(html bool) string {
+	if html {
+		return "html_text"
+	}
+	return "text"
+}
 
-	respBody := Post("/tasks/"+taskId+"/stories", `{"data":{"text":"`+comment+`"}}`)
+func commentPayload(comment string, html bool) string {
+	return `{"data":{` + jsonString(CommentField(html)) + `:` + jsonString(comment) + `}}`
+}
+
+func CommentTo(taskId string, comment string, html bool) string {
+	respBody := Post("/tasks/"+taskId+"/stories", commentPayload(comment, html))
 
 	var output map[string]Commented_t
 	err := json.Unmarshal(respBody, &output)
 	utils.Check(err)
 
+	// Asana echoes back only the plain rendering unless html_text is requested
+	// explicitly, so fall back rather than print an empty confirmation.
+	if html && output["data"].HtmlText != "" {
+		return output["data"].HtmlText
+	}
 	return output["data"].Text
 }
 
-func CreateTask(name, project, section, notes string) Task_t {
-	data := `{"data":{"name":` + strconv.Quote(name)
+func createTaskPayload(name, project, notes string, html bool) string {
+	data := `{"data":{"name":` + jsonString(name)
 	if notes != "" {
-		data += `,"notes":` + strconv.Quote(notes)
+		data += `,` + jsonString(NotesField(html)) + `:` + jsonString(notes)
 	}
 	if project != "" {
-		data += `,"projects":["` + project + `"]`
+		data += `,"projects":[` + jsonString(project) + `]`
 	} else {
 		data += `,"workspace":"` + strconv.Itoa(config.Load().Workspace) + `"`
 	}
-	data += `}}`
+	return data + `}}`
+}
+
+func CreateTask(name, project, section, notes string, html bool) Task_t {
+	data := createTaskPayload(name, project, notes, html)
 
 	var output map[string]Task_t
 	err := json.Unmarshal(Post("/tasks", data), &output)
@@ -315,12 +351,34 @@ func removeProjectPayload(projectId string) string {
 	return `{"data":{"project":` + strconv.Quote(projectId) + `}}`
 }
 
+// NotesField picks the task field for a body. Rich text goes into html_notes;
+// Asana rejects a request carrying both notes and html_notes.
+func NotesField(html bool) string {
+	if html {
+		return "html_notes"
+	}
+	return "notes"
+}
+
+func updatePayload(key string, value string) string {
+	return `{"data":{` + jsonString(key) + `:` + jsonString(value) + `}}`
+}
+
 func Update(taskId string, key string, value string) Task_t {
-	respBody := Put("/tasks/"+taskId, `{"data":{"`+key+`":`+strconv.Quote(value)+`}}`)
+	respBody := Put("/tasks/"+taskId, updatePayload(key, value))
 
 	var output map[string]Task_t
 	err := json.Unmarshal(respBody, &output)
 	utils.Check(err)
 
 	return output["data"]
+}
+
+// jsonString encodes a Go string as a JSON string literal. strconv.Quote is not
+// a substitute: it emits Go escapes such as \x00 that are invalid JSON, which
+// bites once bodies are whole documents rather than one-line values.
+func jsonString(s string) string {
+	encoded, err := json.Marshal(s)
+	utils.Check(err)
+	return string(encoded)
 }

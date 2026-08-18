@@ -14,6 +14,11 @@ func CreateTask(c *cli.Context) {
 	if name == "" {
 		log.Fatal("fatal: task name is required")
 	}
-	t := api.CreateTask(name, c.String("project"), c.String("section"), c.String("body"))
+	var payload string
+	var html bool
+	if body, _ := readBody(c, c.String("body"), c.IsSet("body")); body != "" {
+		payload, html = prepareBody(body, resolveFormat(c))
+	}
+	t := api.CreateTask(name, c.String("project"), c.String("section"), payload, html)
 	fmt.Printf("created %s %s\n", t.Gid, t.Name)
 }
