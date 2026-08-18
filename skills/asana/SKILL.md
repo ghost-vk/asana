@@ -28,17 +28,17 @@ When an index is omitted, `task`, `due`, `comments` default to index `0` (top ta
 | config     | c       | `asana config`                                                       | one-time token + workspace setup                                                                                  |
 | workspaces | w       | `asana w`                                                            | list workspaces                                                                                                   |
 | tasks      | ts      | `asana ts [-p <project>] [-l N] [-n] [-r] [-j]`                      | your tasks, or a project's with `-p`. Writes index cache. `-n` skip cache, `-r` refresh, `-l` limit (default 100). `-j` JSON with full fields (assignee, custom_fields, sections) |
-| task       | t       | `asana t [-v] [-j] [<index\|gid>]`                                   | one task detail. `-v` adds comments+history, `-j` JSON (task+stories+attachments)                                 |
+| task       | t       | `asana t [-v] [-j] [--html] [<index\|gid>]`                          | one task detail. `-v` adds comments+history, `-j` JSON (task+stories+attachments), `--html` prints `html_notes`   |
 | projects   | ps      | `asana ps [query] [-l N]`                                            | list projects; `query` searches by name server-side                                                               |
 | project    | p       | `asana p <gid> [-j]`                                                 | details for one project: name, URL, team, owner, dates, status, notes. `-j` for full JSON                        |
 | sections   | sec     | `asana sec -p <project> [-n] [-r]`                                   | sections/columns of a project (cached per project)                                                                |
-| create     | cr      | `asana cr [-p <project>] [-s <section>] [-b <body>] "<name>"`        | **flags before the name**. Prints new gid                                                                         |
+| create     | cr      | `asana cr [-p <project>] [-s <section>] [-b <body>\|-f <file>] [--md\|--html] "<name>"` | **flags before the name**. Prints new gid                                            |
 | move       | —       | `asana move <index\|gid> -p <project> [-s <section>] [-c]`           | moves a task to another project/section; `-c` copies instead of removing the source project                      |
-| comment    | cm      | `asana cm <index\|gid>`                                              | opens `$EDITOR`; write, save, close to post                                                                       |
+| comment    | cm      | `asana cm [--md\|--html] [-f <file>] <index\|gid>`                   | opens `$EDITOR`; write, save, close to post. `-f`/stdin skips the editor                                          |
 | comments   | cms     | `asana cms <index\|gid>` / `asana cms -g <story_gid>`                | list comments, or read one by story gid                                                                           |
 | done       | —       | `asana done <index\|gid>`                                            | complete the task                                                                                                 |
 | due        | —       | `asana due <index\|gid> <date>`                                      | date = `YYYY-MM-DD`, `today`, or `tomorrow`                                                                       |
-| body       | —       | `asana body <index\|gid> "<text>"`                                   | set notes; empty string clears                                                                                    |
+| body       | —       | `asana body [--md\|--html] [-f <file>] <index\|gid> ["<text>"]`      | set notes; `--md`/`--html` write `html_notes` instead. `-f -` reads stdin; `""` clears                             |
 | fields     | cf      | `asana cf -p <project>`                                              | custom fields; enum fields list their options (gid+name)                                                          |
 | set-field  | sf      | `asana sf -t <task_gid> -f <field_gid> -V <value>`                   | see value rules below. GID only                                                                                   |
 | browse     | b       | `asana b <index\|gid>`                                               | open task in browser                                                                                              |
@@ -70,3 +70,38 @@ Get field and option gids from `asana cf -p <project>`.
 2. To act inside a project: `asana ts -p <project_gid>` (this caches indices), then target tasks by the printed gid (robust) or index.
 3. For project-scoped writes you usually need gids from `ps`/`sec`/`cf` first.
 4. Use `asana move <index|gid> -p <target_project_gid> [-s <target_section_gid>] [-c]` to move or copy a task across projects.
+
+
+## Rich text (`--md` / `--html`)
+
+`body`, `create` and `comment` write plain text into `notes` by default. Two flags
+switch them to Asana's rich-text field (`html_notes`, or `html_text` for comments):
+
+- `--md` — the body is markdown and is converted before sending.
+- `--html` — the body is already Asana rich-text HTML and is validated before sending.
+
+Long documents do not belong on the command line: pass `-f <file>`, or `-f -` to read
+stdin. Stdin is never read implicitly, so the CLI never hangs when run from a script.
+
+    $ asana body --md <gid> -f spec.md
+    $ cat spec.md | asana create --md -f - -p <project> "Spec"
+    $ asana cm --md -f review.md <gid>
+
+Read the rich-text body back with `asana t --html <gid>`; `asana t -j` includes
+`html_notes` too.
+
+### What Asana accepts
+
+Asana parses `html_notes` as strict XML over a small tag whitelist and rejects
+anything else with an opaque `xml_parsing_error`. The CLI validates locally first
+and names the offending tag instead.
+
+- Allowed: `body h1 h2 ul ol li strong em u s code pre blockquote a hr`.
+- A single root `<body>` is required; `<p>` is **not** supported — paragraphs are
+  plain newlines.
+- Void tags must self-close: `<hr/>`, never `<hr>`.
+- `&`, `<`, `>` must be escaped.
+
+`--md` handles all of this. Constructs Asana cannot render are degraded rather than
+dropped: `h3` and deeper collapse to `h2`, images become links, tables become text
+rows. `<pre>` keeps newlines and indentation, so ASCII diagrams survive.

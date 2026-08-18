@@ -7,7 +7,7 @@ func TestJsonVal(t *testing.T) {
 		"null":             "null",
 		"Feature":          `"Feature"`,
 		"1198862357412458": `"1198862357412458"`, // enum gid stays a quoted string, never a raw number
-		"7":                `"7"`,                 // Asana coerces a quoted number for number fields
+		"7":                `"7"`,                // Asana coerces a quoted number for number fields
 	}
 	for in, want := range cases {
 		if got := jsonVal(in); got != want {
