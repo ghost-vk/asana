@@ -91,9 +91,9 @@ func Tasks(params url.Values, withCompleted bool, detailed bool) []Task_t {
 		params.Add("workspace", strconv.Itoa(config.Load().Workspace))
 		params.Add("assignee", "me")
 	}
-	optFields := "name,completed,due_on,resource_subtype,memberships.section.name"
+	optFields := "name,completed,due_on,resource_subtype,memberships.section.name,assignee.name"
 	if detailed {
-		optFields += ",assignee.name,custom_fields.name,custom_fields.display_value"
+		optFields += ",custom_fields.name,custom_fields.display_value"
 	}
 	params.Add("opt_fields", optFields)
 	if !withCompleted {
@@ -300,10 +300,13 @@ func CommentTo(taskId string, comment string, html bool) string {
 	return output["data"].Text
 }
 
-func createTaskPayload(name, project, notes string, html bool) string {
+func createTaskPayload(name, project, notes string, html bool, assignee string) string {
 	data := `{"data":{"name":` + jsonString(name)
 	if notes != "" {
 		data += `,` + jsonString(NotesField(html)) + `:` + jsonString(notes)
+	}
+	if assignee != "" {
+		data += `,"assignee":` + jsonString(assignee)
 	}
 	if project != "" {
 		data += `,"projects":[` + jsonString(project) + `]`
@@ -313,8 +316,15 @@ func createTaskPayload(name, project, notes string, html bool) string {
 	return data + `}}`
 }
 
+// CreateTask creates an unassigned task. Kept for compatibility with callers
+// that use the API package directly.
 func CreateTask(name, project, section, notes string, html bool) Task_t {
-	data := createTaskPayload(name, project, notes, html)
+	return CreateTaskWithAssignee(name, project, section, notes, html, "")
+}
+
+// CreateTaskWithAssignee creates a task and optionally assigns it by email or GID.
+func CreateTaskWithAssignee(name, project, section, notes string, html bool, assignee string) Task_t {
+	data := createTaskPayload(name, project, notes, html, assignee)
 
 	var output map[string]Task_t
 	err := json.Unmarshal(Post("/tasks", data), &output)
@@ -372,6 +382,11 @@ func Update(taskId string, key string, value string) Task_t {
 	utils.Check(err)
 
 	return output["data"]
+}
+
+// AssignTask assigns a task to a user identified by email or GID.
+func AssignTask(taskId, assignee string) Task_t {
+	return Update(taskId, "assignee", assignee)
 }
 
 // jsonString encodes a Go string as a JSON string literal. strconv.Quote is not

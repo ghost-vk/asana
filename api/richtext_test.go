@@ -51,7 +51,7 @@ func TestCreateTaskPayload(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			payload := createTaskPayload("name", "111", "<body>x</body>", tc.html)
+			payload := createTaskPayload("name", "111", "<body>x</body>", tc.html, "")
 			var decoded struct {
 				Data map[string]interface{} `json:"data"`
 			}
@@ -70,7 +70,7 @@ func TestCreateTaskPayload(t *testing.T) {
 }
 
 func TestCreateTaskPayloadOmitsEmptyBody(t *testing.T) {
-	payload := createTaskPayload("name", "111", "", false)
+	payload := createTaskPayload("name", "111", "", false, "")
 	if strings.Contains(payload, "notes") {
 		t.Fatalf("payload %s should omit an empty body", payload)
 	}

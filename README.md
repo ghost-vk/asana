@@ -7,7 +7,7 @@ AI agent (Claude Code, Codex, Hermes) drive it through the bundled skills.
 
 ## Features
 
-- Tasks — list, create, complete, set due date, edit body/notes
+- Tasks — list, create, assign, complete, set due date, edit body/notes
 - Rich text — write task bodies and comments as markdown or Asana HTML
 - Projects — list, search, and view full details
 - Sections/columns and custom fields
@@ -52,6 +52,7 @@ Usage
        project, p           get project details
        sections, sec        get sections/columns of a project
        create, cr           create a task
+       assign               assign a task to a user
        move                 move or copy a task between projects
        task, t              get a task
        comment, cm          Post comment
@@ -140,13 +141,13 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
     --------
     changed the due date to August 13 (2014-08-11T10:30:39.785Z)
 
-`-p <project_gid>` lists tasks of a project instead of your own. Output shows the task gid, non-default type, section and due date (when set).
+`-p <project_gid>` lists tasks of a project instead of your own. Output shows the task gid, non-default type, section, due date and assignee (when set).
 
     $ asana ts -p 1202689990538470
 
-    0 1214634990237303 Raw Signals 📋        Portal updates
-    1 1211297085634051 [S] Engineering Sprint Banner refresh
-    2 1207951833057398 milestone [R] Released Release v2
+    0 1214634990237303 Raw Signals 📋        [@Ada Lovelace] Portal updates
+    1 1211297085634051 [S] Engineering Sprint [@Linus Torvalds] Banner refresh
+    2 1207951833057398 milestone [R] Released [@Grace Hopper] Release v2
 
 `-j` outputs all tasks as JSON with full fields (assignee, custom fields, sections, subtype) — handy for scripting or agent-side grouping by section/assignee/type.
 
@@ -205,9 +206,18 @@ Use the printed section gid as `-s` when creating a task.
     $ asana create "buy coffee"                                  # in your workspace
     $ asana create -p <project_gid> "task in a project"
     $ asana create -p <project_gid> -s <section_gid> "task in a column"
+    $ asana create -p <project_gid> -a person@example.com "assigned task"
     $ asana create -p <project_gid> -b "task description here" "task name"
 
-`-p` adds the task to a project, `-s` puts it into a section/column, `-b` sets the body (notes). Add `--md` or `--html` — and optionally `-f <file>` — to set a rich-text body instead; see [Rich text](#rich-text).
+`-p` adds the task to a project, `-s` puts it into a section/column, `-a` assigns it by user email or GID, and `-b` sets the body (notes). Add `--md` or `--html` — and optionally `-f <file>` — to set a rich-text body instead; see [Rich text](#rich-text).
+
+
+### Assign a task
+
+`asana assign <index|gid> <email|gid>` assigns or reassigns an existing task. An index comes from the latest `asana ts` listing; a task GID works without the cache.
+
+    $ asana assign 0 person@example.com
+    $ asana assign 1214634990237303 1208246360498387
 
 ### Move or copy a task
 

@@ -41,6 +41,7 @@ func Task(c *cli.Context) {
 	}
 
 	fmt.Printf("[ %s ] %s\n", t.Due_on, t.Name)
+	showAssignee(t.Assignee)
 
 	showTags(t.Tags)
 	showCustomFields(t.CustomFields)
@@ -58,6 +59,22 @@ func Task(c *cli.Context) {
 			fmt.Printf("%s\n", s)
 		}
 	}
+}
+
+func showAssignee(assignee api.Base) {
+	if assignee.Name == "" && assignee.Gid == "" {
+		fmt.Println("  Assignee: unassigned")
+		return
+	}
+	if assignee.Name == "" {
+		fmt.Printf("  Assignee: %s\n", assignee.Gid)
+		return
+	}
+	if assignee.Gid == "" {
+		fmt.Printf("  Assignee: %s\n", assignee.Name)
+		return
+	}
+	fmt.Printf("  Assignee: %s (%s)\n", assignee.Name, assignee.Gid)
 }
 
 func showTags(tags []api.Base) {

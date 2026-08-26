@@ -111,14 +111,23 @@ func defs() []*cli.Command {
 		{
 			Name:    "create",
 			Aliases: []string{"cr"},
-			Usage:   "create a task: create [-p project] [-s section] [-b body|-f file] [--md|--html] <name> (flags before name)",
+			Usage:   "create a task: create [-p project] [-s section] [-a email|gid] [-b body|-f file] [--md|--html] <name> (flags before name)",
 			Flags: append([]cli.Flag{
 				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "project gid"},
 				&cli.StringFlag{Name: "section", Aliases: []string{"s"}, Usage: "section/column gid"},
+				&cli.StringFlag{Name: "assignee", Aliases: []string{"a"}, Usage: "assignee email or user gid"},
 				&cli.StringFlag{Name: "body", Aliases: []string{"b"}, Usage: "task body"},
 			}, commands.RichTextFlags("read the task body from a file (- for stdin)")...),
 			Action: func(c *cli.Context) error {
 				commands.CreateTask(c)
+				return nil
+			},
+		},
+		{
+			Name:  "assign",
+			Usage: "assign a task: assign <index|gid> <email|gid>",
+			Action: func(c *cli.Context) error {
+				commands.Assign(c)
 				return nil
 			},
 		},

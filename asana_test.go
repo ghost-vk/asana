@@ -6,7 +6,7 @@ import (
 
 func TestMain(t *testing.T) {
 	expects := []string{"config", "workspaces", "tasks", "projects", "project", "sections",
-		"create", "move", "task", "comment", "comments", "done", "due", "body",
+		"create", "assign", "move", "task", "comment", "comments", "done", "due", "body",
 		"browse", "fields", "set-field", "delete", "download"}
 	cmds := defs()
 	if len(cmds) != len(expects) {
@@ -17,6 +17,21 @@ func TestMain(t *testing.T) {
 			t.Error("commands mismatch")
 		}
 	}
+}
+
+func TestCreateAcceptsAssigneeFlag(t *testing.T) {
+	for _, cmd := range defs() {
+		if cmd.Name != "create" {
+			continue
+		}
+		for _, flag := range cmd.Flags {
+			if include("assignee", flag.Names()) && include("a", flag.Names()) {
+				return
+			}
+		}
+		t.Fatal("create command lacks -a/--assignee")
+	}
+	t.Fatal("create command not found")
 }
 
 func include(target string, list []string) bool {
