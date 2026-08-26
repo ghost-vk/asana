@@ -54,13 +54,25 @@ func Tasks(c *cli.Context) {
 		if line == "" {
 			continue
 		}
-		p := strings.SplitN(line, "\t", 5) // gid \t subtype \t section \t due \t name
-		if len(p) < 5 {
+		rendered, ok := renderCachedTask(i, line)
+		if !ok {
 			continue
 		}
-		fmt.Println(renderTask(i, p[0], p[1], p[2], p[3], p[4]))
+		fmt.Println(rendered)
 		i++
 	}
+}
+
+func renderCachedTask(i int, line string) (string, bool) {
+	p := strings.SplitN(line, "\t", 6) // gid \t subtype \t section \t due \t assignee \t name
+	if len(p) < 5 {
+		return "", false
+	}
+	// Caches written by v0.5 and earlier have no assignee column.
+	if len(p) == 5 {
+		return renderTask(i, p[0], p[1], p[2], p[3], "", p[4]), true
+	}
+	return renderTask(i, p[0], p[1], p[2], p[3], p[4], p[5]), true
 }
 
 func fromAPI(saveCache bool, limit int, project string) {
@@ -74,13 +86,13 @@ func fromAPI(saveCache bool, limit int, project string) {
 		cache(tasks)
 	}
 	for i, t := range tasks {
-		fmt.Println(renderTask(i, t.Gid, t.ResourceSubtype, t.Section(), t.Due_on, t.Name))
+		fmt.Println(renderTask(i, t.Gid, t.ResourceSubtype, t.Section(), t.Due_on, t.Assignee.Name, t.Name))
 	}
 }
 
 // renderTask is the single source of truth for "my tasks" lines, so a fresh
 // fetch and a cache read print identically.
-func renderTask(i int, gid, subtype, section, due, name string) string {
+func renderTask(i int, gid, subtype, section, due, assignee, name string) string {
 	typ := ""
 	if subtype != "" && subtype != "default_task" {
 		typ = subtype + " "
@@ -88,7 +100,10 @@ func renderTask(i int, gid, subtype, section, due, name string) string {
 	if due != "" {
 		due = "[ " + due + " ] "
 	}
-	return fmt.Sprintf("%2d %s %s%-20s %s%s", i, gid, typ, section, due, name)
+	if assignee != "" {
+		assignee = "[@" + assignee + "] "
+	}
+	return fmt.Sprintf("%2d %s %s%-20s %s%s%s", i, gid, typ, section, due, assignee, name)
 }
 
 func cache(tasks []api.Task_t) {
@@ -96,6 +111,6 @@ func cache(tasks []api.Task_t) {
 	defer f.Close()
 	for _, t := range tasks {
 		// tab-delimited; FindTaskId reads the gid from field 0. Names/sections won't contain tabs.
-		f.WriteString(strings.Join([]string{t.Gid, t.ResourceSubtype, t.Section(), t.Due_on, t.Name}, "\t") + "\n")
+		f.WriteString(strings.Join([]string{t.Gid, t.ResourceSubtype, t.Section(), t.Due_on, t.Assignee.Name, t.Name}, "\t") + "\n")
 	}
 }
