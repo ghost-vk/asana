@@ -77,6 +77,9 @@ func TestTaskOptions(t *testing.T) {
 	if opts, _ := taskOptions("", "approval", false, ""); opts.Subtype != "approval" {
 		t.Fatalf("subtype = %q, want approval", opts.Subtype)
 	}
+	if _, err := taskOptions("", "", false, "11/03"); err == nil {
+		t.Fatal("malformed --due must be rejected")
+	}
 	if _, err := taskOptions("", "epic", false, ""); err == nil {
 		t.Fatal("unknown subtype must be rejected")
 	}

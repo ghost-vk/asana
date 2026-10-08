@@ -152,7 +152,7 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
 
 A project listing reads every page; `-l N` caps it.
 
-Completed tasks are hidden by default. `--completed` (alias `--all`, `-a`) includes them, marked `✓`; `--since YYYY-MM-DD` keeps only those completed since that date.
+Completed tasks are hidden by default. `--completed` (alias `--all`, `-a`) includes them, marked `✓`; `--since YYYY-MM-DD` adds only tasks completed since that date (open tasks stay listed). Without `-p`, your own tasks stop at `-l` (default 100), so pair `--completed` with `--since` or `-l 0` there.
 
     $ asana ts -p 1202689990538470 --completed
     $ asana ts -p 1202689990538470 --since 2026-09-01

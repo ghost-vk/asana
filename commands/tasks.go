@@ -89,7 +89,7 @@ func queryFromFlags(c *cli.Context) (taskQuery, error) {
 	q := taskQuery{
 		project:       c.String("project"),
 		limit:         c.Int("limit"),
-		withCompleted: c.Bool("completed") || c.IsSet("since"),
+		withCompleted: c.Bool("completed") || c.String("since") != "",
 		since:         c.String("since"),
 	}
 	// A project listing is read in full unless -l caps it: stopping at the

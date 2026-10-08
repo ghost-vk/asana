@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
@@ -41,6 +42,9 @@ func taskOptions(assignee, subtype string, milestone bool, due string) (api.Task
 	}
 	if due != "" {
 		due = toDate(due)
+		if _, err := time.Parse("2006-01-02", due); err != nil {
+			return api.TaskOptions{}, fmt.Errorf("--due must be YYYY-MM-DD, today or tomorrow, got %q", due)
+		}
 	}
 	return api.TaskOptions{Assignee: assignee, Subtype: subtype, DueOn: due}, nil
 }
