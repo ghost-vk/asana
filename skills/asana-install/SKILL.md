@@ -15,7 +15,7 @@ Installs `asana` from `github.com/ghost-vk/asana`. Pick the method by platform; 
    brew install ghost-vk/tap/asana
    ```
 
-   This is a cask (prebuilt binary), macOS only. To update later: `brew upgrade asana`.
+   This is a cask (prebuilt binary), macOS only. To update later: `brew upgrade --cask ghost-vk/tap/asana` — always the full name: bare `asana` is the official Asana desktop app cask and replaces the CLI with it.
 
 2. **Any OS with a Go toolchain:**
 
