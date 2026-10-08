@@ -19,7 +19,7 @@ func TestParseBatchAcceptsArrayAndJSONLines(t *testing.T) {
 }
 
 func TestParseBatchRejectsBadInput(t *testing.T) {
-	for _, in := range []string{"", "[]", `{"task":"1","dew":"2026-11-03"}`, `{"task":`} {
+	for _, in := range []string{"", "[]", `[{"task":"1","completed":true}] {"task":"2"}`, `{"task":"1","dew":"2026-11-03"}`, `{"task":`} {
 		if _, err := parseBatch([]byte(in)); err == nil {
 			t.Fatalf("parseBatch(%q) should fail", in)
 		}

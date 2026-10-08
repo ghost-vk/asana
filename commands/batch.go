@@ -112,6 +112,9 @@ func parseBatch(raw []byte) ([]batchOp, error) {
 		if err := dec.Decode(&ops); err != nil {
 			return nil, fmt.Errorf("batch input: %v", err)
 		}
+		if dec.More() {
+			return nil, fmt.Errorf("batch input: unexpected data after the array")
+		}
 	} else {
 		for dec.More() {
 			var op batchOp
@@ -213,24 +216,36 @@ func nullableString(raw json.RawMessage, key string) (*string, error) {
 }
 
 func runStep(s batchStep) error {
+	// Find the source project before writing anything, so a task that cannot
+	// be moved is left untouched rather than half-applied.
+	source := ""
+	if s.project != "" && !s.copy {
+		t, err := api.TryTaskProjects(s.task)
+		if err != nil {
+			return err
+		}
+		if source, err = sourceProjectForMove(t); err != nil {
+			msg := strings.TrimPrefix(err.Error(), "fatal: ")
+			return fmt.Errorf("%s", strings.ReplaceAll(msg, "--copy", `"copy": true`))
+		}
+	}
 	if len(s.update) > 0 {
 		if _, err := api.TryUpdateTask(s.task, s.update); err != nil {
 			return err
 		}
 	}
+	if err := moveStep(s, source); err != nil {
+		if len(s.update) > 0 {
+			return fmt.Errorf("fields updated, move failed: %v", err)
+		}
+		return err
+	}
+	return nil
+}
+
+func moveStep(s batchStep, source string) error {
 	switch {
 	case s.project != "":
-		source := ""
-		if !s.copy {
-			t, err := api.TryTaskProjects(s.task)
-			if err != nil {
-				return err
-			}
-			if source, err = sourceProjectForMove(t); err != nil {
-				msg := strings.TrimPrefix(err.Error(), "fatal: ")
-				return fmt.Errorf("%s", strings.ReplaceAll(msg, "--copy", `"copy": true`))
-			}
-		}
 		if err := api.TryAddProject(s.task, s.project, s.section); err != nil {
 			return err
 		}

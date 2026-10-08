@@ -70,7 +70,7 @@ Input: a JSON array or JSON lines, one op per task. Only `task` is required:
 - `due`, `assignee`, field values: `null` clears. `due` takes `YYYY-MM-DD`, `today`, `tomorrow`.
 - `section` alone moves within the task's project; `project` (+`section`) moves across projects, `copy: true` keeps the source.
 - Unknown keys, bad dates and unknown enum options fail the whole run before any write.
-- Output: `ok <gid> <changes>` or `fail <gid>: <error>` per task; API errors do not stop the rest, exit code 1 if any failed.
+- Output: `ok <gid> <changes>` or `fail <gid>: <error>` per task; API errors do not stop the rest, exit code 1 if any failed. Rate limits (429) are retried.
 
 ## Output shapes (for parsing)
 
