@@ -14,6 +14,7 @@ func TestValidateAccepts(t *testing.T) {
 		{"escaped entities", "<body>a &amp; b &lt; c &gt; d</body>"},
 		{"nested lists", "<body><ul><li>a<ul><li>b</li></ul></li></ul></body>"},
 		{"leading whitespace", "\n  <body>hi</body>\n"},
+		{"task mention", "<body><ol><li><a data-asana-gid=\"1219065173477806\"/></li></ol></body>"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

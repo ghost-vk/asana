@@ -104,6 +104,12 @@ func TestFromMarkdown(t *testing.T) {
 			want: "<body>see <a href=\"https://asana.com/a?b=1&amp;c=2\">docs</a></body>",
 		},
 		{
+			name: "ordered list of task links",
+			md:   "1. [Crop video](https://app.asana.com/1/42/project/7/task/1219065173477806)\n2. [Estimate](https://app.asana.com/0/0/1218737822731836)",
+			want: "<body><ol><li><a href=\"https://app.asana.com/1/42/project/7/task/1219065173477806\">Crop video</a></li>" +
+				"<li><a href=\"https://app.asana.com/0/0/1218737822731836\">Estimate</a></li></ol></body>",
+		},
+		{
 			name: "image degrades to a link",
 			md:   "![alt text](https://x/y.png)",
 			want: "<body><a href=\"https://x/y.png\">alt text</a></body>",

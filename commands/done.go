@@ -9,6 +9,11 @@ import (
 )
 
 func Done(c *cli.Context) {
-	task := api.Update(api.FindTaskId(c.Args().First(), false), "completed", "true")
+	task := api.SetCompleted(api.FindTaskId(c.Args().First(), false), true)
 	fmt.Println("DONE! : " + task.Name)
+}
+
+func Undone(c *cli.Context) {
+	task := api.SetCompleted(api.FindTaskId(c.Args().First(), false), false)
+	fmt.Println("REOPENED : " + task.Name)
 }
