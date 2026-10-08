@@ -1,6 +1,6 @@
 {
   "name": "asana",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Install and drive the asana CLI from Codex.",
   "author": {
     "name": "ghost-vk"

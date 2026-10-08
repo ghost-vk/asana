@@ -154,6 +154,110 @@ func TestTasksPaginateByLimit(t *testing.T) {
 	}
 }
 
+func TestTasksWithCompletedReadsEveryPage(t *testing.T) {
+	restore := fetchTasksPage
+	defer func() { fetchTasksPage = restore }()
+
+	pages := map[string]struct {
+		size int
+		next string
+	}{"": {100, "p2"}, "p2": {100, "p3"}, "p3": {50, ""}}
+	var completedSince []string
+	fetchTasksPage = func(params url.Values) []byte {
+		completedSince = append(completedSince, params.Get("completed_since"))
+		if params.Get("limit") != "100" {
+			t.Fatalf("unbounded listing should request full pages, got limit %q", params.Get("limit"))
+		}
+		page, ok := pages[params.Get("offset")]
+		if !ok {
+			t.Fatalf("unexpected offset %q", params.Get("offset"))
+		}
+		tasks := make([]Task_t, page.size)
+		for i := range tasks {
+			tasks[i] = Task_t{Gid: fmt.Sprintf("%s-%d", params.Get("offset"), i), Completed: i%2 == 0}
+		}
+		return taskListResponse(tasks, page.next)
+	}
+
+	params := url.Values{}
+	params.Set("limit", "0")
+	params.Set("project", "7")
+	tasks := Tasks(params, true, false)
+	if got, want := len(tasks), 250; got != want {
+		t.Fatalf("tasks len = %d, want %d", got, want)
+	}
+	for _, cs := range completedSince {
+		if cs != "" {
+			t.Fatalf("completed listing must not send completed_since=%q", cs)
+		}
+	}
+}
+
+func TestTasksOpenOnlyFiltersServerSide(t *testing.T) {
+	restore := fetchTasksPage
+	defer func() { fetchTasksPage = restore }()
+
+	fetchTasksPage = func(params url.Values) []byte {
+		if got := params.Get("completed_since"); got != "now" {
+			t.Fatalf("completed_since = %q, want now", got)
+		}
+		return taskListResponse([]Task_t{{Gid: "1"}, {Gid: "2", Completed: true}}, "")
+	}
+	params := url.Values{}
+	params.Set("project", "7")
+	if got := Tasks(params, false, false); len(got) != 1 || got[0].Gid != "1" {
+		t.Fatalf("tasks = %+v, want only the open one", got)
+	}
+}
+
+func TestSetCompletedSendsBoolean(t *testing.T) {
+	originalTransport := http.DefaultTransport
+	defer func() { http.DefaultTransport = originalTransport }()
+
+	for _, completed := range []bool{true, false} {
+		http.DefaultTransport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.Method != http.MethodPut || req.URL.Path != "/api/1.0/tasks/1234567890" {
+				t.Fatalf("request = %s %s", req.Method, req.URL.Path)
+			}
+			body, _ := io.ReadAll(req.Body)
+			var payload struct {
+				Data map[string]interface{} `json:"data"`
+			}
+			if err := json.Unmarshal(body, &payload); err != nil {
+				t.Fatal(err)
+			}
+			if got := payload.Data["completed"]; got != completed {
+				t.Fatalf("completed = %#v, want bool %v", got, completed)
+			}
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"data":{"gid":"1234567890","name":"Ship it"}}`)),
+				Header:     make(http.Header),
+			}, nil
+		})
+		if got := SetCompleted("1234567890", completed); got.Name != "Ship it" {
+			t.Fatalf("task name = %q", got.Name)
+		}
+	}
+}
+
+func TestCreateTaskPayloadSubtypeAndDue(t *testing.T) {
+	payload := createTaskPayload("M1", "7", "", false, TaskOptions{Subtype: "milestone", DueOn: "2026-11-03"})
+	var decoded struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(payload), &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Data["resource_subtype"] != "milestone" || decoded.Data["due_on"] != "2026-11-03" {
+		t.Fatalf("payload = %s", payload)
+	}
+	plain := createTaskPayload("T", "7", "", false, TaskOptions{})
+	if strings.Contains(plain, "resource_subtype") || strings.Contains(plain, "due_on") {
+		t.Fatalf("payload %s should omit unset subtype and due", plain)
+	}
+}
+
 func TestMoveProjectPayloads(t *testing.T) {
 	if got, want := addProjectPayload("123", "456"), `{"data":{"project":"123","section":"456"}}`; got != want {
 		t.Fatalf("addProjectPayload = %s, want %s", got, want)

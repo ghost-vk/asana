@@ -61,9 +61,11 @@ func defs() []*cli.Command {
 			Flags: []cli.Flag{
 				&cli.BoolFlag{Name: "no-cache", Aliases: []string{"n"}, Usage: "without cache"},
 				&cli.BoolFlag{Name: "refresh", Aliases: []string{"r"}, Usage: "update cache"},
-				&cli.IntFlag{Name: "limit", Aliases: []string{"l"}, Value: 100, Usage: "max tasks to fetch"},
+				&cli.IntFlag{Name: "limit", Aliases: []string{"l"}, Value: 100, Usage: "max tasks to fetch; with -p every task unless set, 0 = no limit"},
 				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "tasks of a project (gid)"},
 				&cli.BoolFlag{Name: "json", Aliases: []string{"j"}, Usage: "output as JSON (detailed fields)"},
+				&cli.BoolFlag{Name: "completed", Aliases: []string{"all", "a"}, Usage: "include completed tasks (marked ✓)"},
+				&cli.StringFlag{Name: "since", Usage: "with completed tasks, only those completed since YYYY-MM-DD (implies --completed)"},
 			},
 			Action: func(c *cli.Context) error {
 				commands.Tasks(c)
@@ -111,11 +113,14 @@ func defs() []*cli.Command {
 		{
 			Name:    "create",
 			Aliases: []string{"cr"},
-			Usage:   "create a task: create [-p project] [-s section] [-a email|gid] [-b body|-f file] [--md|--html] <name> (flags before name)",
+			Usage:   "create a task: create [-p project] [-s section] [-a email|gid] [--milestone|--subtype type] [--due date] [-b body|-f file] [--md|--html] <name> (flags before name)",
 			Flags: append([]cli.Flag{
 				&cli.StringFlag{Name: "project", Aliases: []string{"p"}, Usage: "project gid"},
 				&cli.StringFlag{Name: "section", Aliases: []string{"s"}, Usage: "section/column gid"},
 				&cli.StringFlag{Name: "assignee", Aliases: []string{"a"}, Usage: "assignee email or user gid"},
+				&cli.BoolFlag{Name: "milestone", Usage: "create a milestone (same as --subtype milestone)"},
+				&cli.StringFlag{Name: "subtype", Usage: "task type: default_task, milestone or approval"},
+				&cli.StringFlag{Name: "due", Usage: "due date: YYYY-MM-DD, today or tomorrow"},
 				&cli.StringFlag{Name: "body", Aliases: []string{"b"}, Usage: "task body"},
 			}, commands.RichTextFlags("read the task body from a file (- for stdin)")...),
 			Action: func(c *cli.Context) error {
@@ -185,6 +190,15 @@ func defs() []*cli.Command {
 			Usage: "Complete task",
 			Action: func(c *cli.Context) error {
 				commands.Done(c)
+				return nil
+			},
+		},
+		{
+			Name:    "undone",
+			Aliases: []string{"reopen"},
+			Usage:   "reopen a completed task",
+			Action: func(c *cli.Context) error {
+				commands.Undone(c)
 				return nil
 			},
 		},

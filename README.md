@@ -7,7 +7,7 @@ AI agent (Claude Code, Codex, Hermes) drive it through the bundled skills.
 
 ## Features
 
-- Tasks — list, create, assign, complete, set due date, edit body/notes
+- Tasks — list (open or completed), create (incl. milestones), assign, complete, reopen, set due date, edit body/notes
 - Rich text — write task bodies and comments as markdown or Asana HTML
 - Projects — list, search, and view full details
 - Sections/columns and custom fields
@@ -58,6 +58,7 @@ Usage
        comment, cm          Post comment
        comments, cms        list or read comments of a task
        done                 Complete task
+       undone, reopen       reopen a completed task
        due                  set due date
        body                 set task body (notes or rich text)
        fields, cf           list custom fields of a project
@@ -149,6 +150,13 @@ Select one workspace. Configurations are saved in `~/.asana.yml`.
     1 1211297085634051 [S] Engineering Sprint [@Linus Torvalds] Banner refresh
     2 1207951833057398 milestone [R] Released [@Grace Hopper] Release v2
 
+A project listing reads every page; `-l N` caps it.
+
+Completed tasks are hidden by default. `--completed` (alias `--all`, `-a`) includes them, marked `✓`; `--since YYYY-MM-DD` adds only tasks completed since that date (open tasks stay listed). Without `-p`, your own tasks stop at `-l` (default 100), so pair `--completed` with `--since` or `-l 0` there.
+
+    $ asana ts -p 1202689990538470 --completed
+    $ asana ts -p 1202689990538470 --since 2026-09-01
+
 `-j` outputs all tasks as JSON with full fields (assignee, custom fields, sections, subtype) — handy for scripting or agent-side grouping by section/assignee/type.
 
     $ asana ts -p 1202689990538470 -j
@@ -208,6 +216,8 @@ Use the printed section gid as `-s` when creating a task.
     $ asana create -p <project_gid> -s <section_gid> "task in a column"
     $ asana create -p <project_gid> -a person@example.com "assigned task"
     $ asana create -p <project_gid> -b "task description here" "task name"
+    $ asana create -p <project_gid> --milestone --due 2026-11-03 "Release"
+    $ asana create -p <project_gid> --subtype approval "Sign-off"
 
 `-p` adds the task to a project, `-s` puts it into a section/column, `-a` assigns it by user email or GID, and `-b` sets the body (notes). Add `--md` or `--html` — and optionally `-f <file>` — to set a rich-text body instead; see [Rich text](#rich-text).
 
@@ -294,6 +304,10 @@ Field and option gids come from `asana fields -p <project>`.
 To complete task, use `asana complete <index>` or `asana done <index>`.
 
     $ asana done 12
+
+`asana undone <index|gid>` (alias `reopen`) reopens a completed task.
+
+    $ asana undone 12
 
 To change(or newly set) due date, use `asana due <index> <due_date>`.
 

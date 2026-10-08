@@ -105,16 +105,16 @@ func Tasks(params url.Values, withCompleted bool, detailed bool) []Task_t {
 			limit = parsed
 		}
 	}
-	if limit <= 0 {
-		limit = asanaTaskPageSize
-	}
+	// limit 0 (or below) means "every page": a project listing must not stop at
+	// the first 100 tasks, or tasks past it look like they do not exist.
+	unbounded := limit <= 0
 	params = cloneURLValues(params)
 
 	remaining := limit
-	collected := make([]Task_t, 0, remaining)
-	for remaining > 0 {
+	collected := make([]Task_t, 0, asanaTaskPageSize)
+	for unbounded || remaining > 0 {
 		pageLimit := asanaTaskPageSize
-		if remaining < asanaTaskPageSize {
+		if !unbounded && remaining < asanaTaskPageSize {
 			pageLimit = remaining
 		}
 		params.Set("limit", strconv.Itoa(pageLimit))
@@ -131,7 +131,7 @@ func Tasks(params url.Values, withCompleted bool, detailed bool) []Task_t {
 		collected = append(collected, response.Data...)
 		remaining -= len(response.Data)
 
-		if remaining <= 0 || response.NextPage == nil || response.NextPage.Offset == "" || len(response.Data) == 0 {
+		if (!unbounded && remaining <= 0) || response.NextPage == nil || response.NextPage.Offset == "" || len(response.Data) == 0 {
 			break
 		}
 		params.Set("offset", response.NextPage.Offset)
@@ -300,13 +300,26 @@ func CommentTo(taskId string, comment string, html bool) string {
 	return output["data"].Text
 }
 
-func createTaskPayload(name, project, notes string, html bool, assignee string) string {
+// TaskOptions are the optional fields of a new task.
+type TaskOptions struct {
+	Assignee string // email or user gid
+	Subtype  string // resource_subtype: default_task, milestone, approval
+	DueOn    string // YYYY-MM-DD
+}
+
+func createTaskPayload(name, project, notes string, html bool, opts TaskOptions) string {
 	data := `{"data":{"name":` + jsonString(name)
 	if notes != "" {
 		data += `,` + jsonString(NotesField(html)) + `:` + jsonString(notes)
 	}
-	if assignee != "" {
-		data += `,"assignee":` + jsonString(assignee)
+	if opts.Assignee != "" {
+		data += `,"assignee":` + jsonString(opts.Assignee)
+	}
+	if opts.Subtype != "" {
+		data += `,"resource_subtype":` + jsonString(opts.Subtype)
+	}
+	if opts.DueOn != "" {
+		data += `,"due_on":` + jsonString(opts.DueOn)
 	}
 	if project != "" {
 		data += `,"projects":[` + jsonString(project) + `]`
@@ -324,7 +337,12 @@ func CreateTask(name, project, section, notes string, html bool) Task_t {
 
 // CreateTaskWithAssignee creates a task and optionally assigns it by email or GID.
 func CreateTaskWithAssignee(name, project, section, notes string, html bool, assignee string) Task_t {
-	data := createTaskPayload(name, project, notes, html, assignee)
+	return CreateTaskWithOptions(name, project, section, notes, html, TaskOptions{Assignee: assignee})
+}
+
+// CreateTaskWithOptions creates a task with an optional assignee, subtype and due date.
+func CreateTaskWithOptions(name, project, section, notes string, html bool, opts TaskOptions) Task_t {
+	data := createTaskPayload(name, project, notes, html, opts)
 
 	var output map[string]Task_t
 	err := json.Unmarshal(Post("/tasks", data), &output)
@@ -376,6 +394,18 @@ func updatePayload(key string, value string) string {
 
 func Update(taskId string, key string, value string) Task_t {
 	respBody := Put("/tasks/"+taskId, updatePayload(key, value))
+
+	var output map[string]Task_t
+	err := json.Unmarshal(respBody, &output)
+	utils.Check(err)
+
+	return output["data"]
+}
+
+// SetCompleted closes or reopens a task. It sends a JSON boolean: Update would
+// send the string "false", which is not a value to rely on.
+func SetCompleted(taskId string, completed bool) Task_t {
+	respBody := Put("/tasks/"+taskId, `{"data":{"completed":`+strconv.FormatBool(completed)+`}}`)
 
 	var output map[string]Task_t
 	err := json.Unmarshal(respBody, &output)
