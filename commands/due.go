@@ -24,9 +24,9 @@ func toDate(str string) string {
 	switch {
 	case regexp.MustCompile(DateRegexp).MatchString(str):
 		return str
-	case regexp.MustCompile("today").MatchString(str):
+	case str == "today":
 		return time.Now().Format("2006-01-02")
-	case regexp.MustCompile("tomorrow").MatchString(str):
+	case str == "tomorrow":
 		d, _ := time.ParseDuration("24h")
 		return time.Now().Add(d).Format("2006-01-02")
 	default:

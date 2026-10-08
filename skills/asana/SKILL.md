@@ -46,6 +46,7 @@ When an index is omitted, `task`, `due`, `comments` default to index `0` (top ta
 | set-field  | sf      | `asana sf -t <task_gid> -f <field_gid> -V <value>`                   | see value rules below. GID only                                                                                   |
 | browse     | b       | `asana b <index\|gid>`                                               | open task in browser                                                                                              |
 | download   | dl      | `asana dl <task_index> <att_index>` / `asana dl <att_gid> [-o path]` | attachment indices come from `asana t <index>`                                                                    |
+| batch      | —       | `asana batch -f <ops.json\|-> [-n]`                                  | many task changes in one run, see below. `-n` (`--dry-run`) validates and prints the plan. GID only           |
 | delete     | rm      | `asana rm <gid>`                                                     | delete by GID only                                                                                                |
 
 ## set-field values (`-V`)
@@ -56,6 +57,20 @@ When an index is omitted, `task`, `due`, `comments` default to index `0` (top ta
 - **null** — clears the field (`-V null`).
 
 Get field and option gids from `asana cf -p <project>`.
+
+## batch
+
+Input: a JSON array or JSON lines, one op per task. Only `task` is required:
+
+    {"task":"<gid>","name":"…","due":"2026-11-03","assignee":"me","completed":true,
+     "fields":{"<field_gid>":"<option name|gid|text>","<num_field_gid>":7,"<field_gid>":null},
+     "project":"<gid>","section":"<gid>","copy":false}
+
+- One PUT per task for name/due/assignee/completed/fields, then a move if `project` or `section` is set.
+- `due`, `assignee`, field values: `null` clears. `due` takes `YYYY-MM-DD`, `today`, `tomorrow`.
+- `section` alone moves within the task's project; `project` (+`section`) moves across projects, `copy: true` keeps the source.
+- Unknown keys, bad dates and unknown enum options fail the whole run before any write.
+- Output: `ok <gid> <changes>` or `fail <gid>: <error>` per task; API errors do not stop the rest, exit code 1 if any failed. Rate limits (429) are retried.
 
 ## Output shapes (for parsing)
 

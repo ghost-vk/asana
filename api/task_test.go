@@ -292,3 +292,25 @@ func taskListResponse(data []Task_t, nextOffset string) []byte {
 	}
 	return b
 }
+
+func TestTryUpdateTaskSendsNullAndReturnsError(t *testing.T) {
+	originalTransport := http.DefaultTransport
+	defer func() { http.DefaultTransport = originalTransport }()
+
+	http.DefaultTransport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(req.Body)
+		if got, want := string(body), `{"data":{"due_on":null}}`; got != want {
+			t.Fatalf("body = %s, want %s", got, want)
+		}
+		return &http.Response{
+			StatusCode: http.StatusForbidden,
+			Status:     "403 Forbidden",
+			Body:       io.NopCloser(strings.NewReader(`{"errors":[{"message":"no access"}]}`)),
+			Header:     make(http.Header),
+		}, nil
+	})
+	_, err := TryUpdateTask("1234567890", map[string]interface{}{"due_on": nil})
+	if err == nil || !strings.Contains(err.Error(), "no access") {
+		t.Fatalf("err = %v, want the API message", err)
+	}
+}

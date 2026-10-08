@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/url"
 	"strconv"
@@ -59,13 +60,21 @@ func SetCustomField(taskGid, fieldGid, value string) {
 
 // resolveEnum maps an enum option gid or case-insensitive name to its option gid.
 func resolveEnum(f CustomFieldDef, v string) string {
+	gid, err := EnumOption(f, v)
+	if err != nil {
+		log.Fatal("fatal: " + err.Error())
+	}
+	return gid
+}
+
+// EnumOption maps an enum option gid or case-insensitive name to its option gid.
+func EnumOption(f CustomFieldDef, v string) (string, error) {
 	for _, o := range f.EnumOptions {
 		if o.Gid == v || strings.EqualFold(o.Name, v) {
-			return o.Gid
+			return o.Gid, nil
 		}
 	}
-	log.Fatalf("fatal: %q is not an option of %q (run: asana fields -p <project>)", v, f.Name)
-	return ""
+	return "", fmt.Errorf("%q is not an option of %q (run: asana fields -p <project>)", v, f.Name)
 }
 
 // jsonVal: quote everything; Asana coerces "7"→number, enum needs the gid quoted. "null" clears.
