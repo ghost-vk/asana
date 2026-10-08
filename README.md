@@ -299,6 +299,19 @@ Read it back with `asana t --html <gid>`, or `asana t -j` which includes `html_n
 Field and option gids come from `asana fields -p <project>`.
 
 
+### Batch changes
+
+`asana batch -f ops.json` (or `-f -` for stdin) applies many changes in one run: a JSON array or JSON lines, one op per task. `-n` validates and prints the plan without writing.
+
+    $ cat ops.jsonl
+    {"task":"1219065173477806","due":"2026-11-03","fields":{"1199105780031549":"Bug"},"section":"1214174546528529"}
+    {"task":"1218737822731836","completed":true,"assignee":null}
+    $ asana batch -f ops.jsonl
+    ok   1219065173477806 due_on=2026-11-03 fields(1) section->1214174546528529
+    ok   1218737822731836 assignee=null completed=true
+
+Keys: `task` (required), `name`, `due`, `assignee`, `completed`, `fields` (`{field_gid: value}`), `project`, `section`, `copy`. `null` clears. The whole input is checked before the first write; an API error on one task does not stop the others.
+
 ### Complete, set due on a task
 
 To complete task, use `asana complete <index>` or `asana done <index>`.

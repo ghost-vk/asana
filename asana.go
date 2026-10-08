@@ -255,6 +255,18 @@ func defs() []*cli.Command {
 			},
 		},
 		{
+			Name:  "batch",
+			Usage: "apply many task changes from JSON: batch -f ops.json|- [--dry-run]",
+			Flags: []cli.Flag{
+				&cli.StringFlag{Name: "file", Aliases: []string{"f"}, Usage: "JSON array or JSON lines of ops (- for stdin)"},
+				&cli.BoolFlag{Name: "dry-run", Aliases: []string{"n"}, Usage: "validate and print the plan without writing"},
+			},
+			Action: func(c *cli.Context) error {
+				commands.Batch(c)
+				return nil
+			},
+		},
+		{
 			Name:    "delete",
 			Aliases: []string{"rm"},
 			Usage:   "delete a task by gid",

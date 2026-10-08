@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -56,7 +58,29 @@ func Delete(path string) []byte {
 	return fire(req)
 }
 
+// Request sends a call to the API and returns the error instead of exiting,
+// so a batch can report a failed task and go on with the rest.
+func Request(method, path, data string) ([]byte, error) {
+	var body io.Reader
+	if data != "" {
+		body = strings.NewReader(data)
+	}
+	req, err := http.NewRequest(method, PostBase+path, body)
+	if err != nil {
+		return nil, err
+	}
+	return send(req)
+}
+
 func fire(req *http.Request) []byte {
+	body, err := send(req)
+	if err != nil {
+		log.Fatalf("fatal: %v", err)
+	}
+	return body
+}
+
+func send(req *http.Request) ([]byte, error) {
 	client := &http.Client{}
 
 	req.Header.Set("User-Agent", UserAgent)
@@ -64,17 +88,21 @@ func fire(req *http.Request) []byte {
 	req.Header.Set("Content-Type", "application/json") // ponytail: harmless on GET, required for POST/PUT JSON bodies
 
 	resp, err := client.Do(req)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	utils.Check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	if resp.StatusCode >= 300 {
 		// Asana explains rejections in the body: an html_notes typo comes back
 		// as xml_parsing_error, which the bare status line would swallow.
-		log.Fatalf("fatal: %s\n%s", resp.Status, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("%s\n%s", resp.Status, strings.TrimSpace(string(body)))
 	}
 
-	return body
+	return body, nil
 }

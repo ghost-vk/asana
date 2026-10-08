@@ -427,3 +427,50 @@ func jsonString(s string) string {
 	utils.Check(err)
 	return string(encoded)
 }
+
+// The Try* calls return API errors instead of exiting; batch uses them to
+// report a failed task and continue with the next one.
+
+func TryUpdateTask(taskId string, data map[string]interface{}) (Task_t, error) {
+	payload, err := json.Marshal(map[string]interface{}{"data": data})
+	if err != nil {
+		return Task_t{}, err
+	}
+	body, err := Request("PUT", "/tasks/"+taskId, string(payload))
+	if err != nil {
+		return Task_t{}, err
+	}
+	var output map[string]Task_t
+	if err := json.Unmarshal(body, &output); err != nil {
+		return Task_t{}, err
+	}
+	return output["data"], nil
+}
+
+func TryTaskProjects(taskId string) (Task_t, error) {
+	body, err := Request("GET", "/tasks/"+taskId+"?opt_fields=name,projects.gid,projects.name", "")
+	if err != nil {
+		return Task_t{}, err
+	}
+	var output map[string]Task_t
+	if err := json.Unmarshal(body, &output); err != nil {
+		return Task_t{}, err
+	}
+	return output["data"], nil
+}
+
+func TryAddProject(taskId, projectId, sectionId string) error {
+	_, err := Request("POST", "/tasks/"+taskId+"/addProject", addProjectPayload(projectId, sectionId))
+	return err
+}
+
+func TryRemoveProject(taskId, projectId string) error {
+	_, err := Request("POST", "/tasks/"+taskId+"/removeProject", removeProjectPayload(projectId))
+	return err
+}
+
+// TryAddToSection moves a task to another section of a project it is already in.
+func TryAddToSection(sectionId, taskId string) error {
+	_, err := Request("POST", "/sections/"+sectionId+"/addTask", `{"data":{"task":`+jsonString(taskId)+`}}`)
+	return err
+}
